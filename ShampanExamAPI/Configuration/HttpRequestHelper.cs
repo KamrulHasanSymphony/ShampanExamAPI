@@ -2,7 +2,7 @@
 using System.Net;
 using System.Text;
 
-namespace ShampanTailorAPI.Configuration
+namespace ShampanExamAPI.Configuration
 {
     public class HttpRequestHelper
     {

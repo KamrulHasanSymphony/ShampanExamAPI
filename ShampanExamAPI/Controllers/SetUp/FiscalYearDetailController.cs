@@ -3,7 +3,7 @@ using ShampanExam.Service.SetUp;
 using ShampanExam.ViewModel.CommonVMs;
 using ShampanExam.ViewModel.SetUpVMs;
 
-namespace ShampanTailorAPI.Controllers.SetUp
+namespace ShampanExamAPI.Controllers.SetUp
 {
     [Route("api/[controller]")]
     [ApiController]

@@ -4,7 +4,7 @@ using ShampanExam.ViewModel.AccountVMs;
 using ShampanExam.ViewModel.CommonVMs;
 using ShampanExam.ViewModel.KendoCommon;
 
-namespace ShampanTailorAPI.Controllers.SetUp
+namespace ShampanExamAPI.Controllers.SetUp
 {
     [Route("api/[controller]")]
     [ApiController]

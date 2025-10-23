@@ -7,11 +7,11 @@ using ShampanExam.ViewModel.ExtensionMethods;
 using ShampanExam.ViewModel.KendoCommon;
 using ShampanExam.ViewModel.QuestionVM;
 using ShampanExam.ViewModel.Utility;
-using ShampanTailorAPI.Configuration;
+using ShampanExamAPI.Configuration;
 using System.Data;
-using static ShampanTailorAPI.Configuration.HttpRequestHelper;
+using static ShampanExamAPI.Configuration.HttpRequestHelper;
 
-namespace ShampanTailorAPI.Controllers.Question
+namespace ShampanExamAPI.Controllers.Question
 {
     [Route("api/[controller]")]
     [ApiController]

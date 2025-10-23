@@ -7,7 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace ShampanTailorAPI.Controllers.Login
+namespace ShampanExamAPI.Controllers.Login
 {
     [Route("api/[controller]")]
     [ApiController]

@@ -9,7 +9,7 @@
     }
   },
   "profiles": {
-    "ShampanTailorAPI": {
+    "ShampanExamAPI": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

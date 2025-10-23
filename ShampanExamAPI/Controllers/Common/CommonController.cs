@@ -6,7 +6,7 @@ using ShampanExam.ViewModel.ExtensionMethods;
 using ShampanExam.ViewModel.SetUpVMs;
 using System.Data;
 
-namespace ShampanTailorAPI.Controllers.Common
+namespace ShampanExamAPI.Controllers.Common
 {
     [Route("api/[controller]")]
     [ApiController]
