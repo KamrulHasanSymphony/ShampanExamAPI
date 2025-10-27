@@ -20,7 +20,7 @@ namespace ShampanExam.Repository.Question
                 if (transaction == null) transaction = conn.BeginTransaction();
 
                 string query = @"
-                INSERT INTO QuestionSetquestionSetDetailList
+                INSERT INTO QuestionSetDetails
                 (
                     QuestionSetHeaderId, QuestionHeaderId, QuestionMark
                 )

@@ -14,136 +14,295 @@ namespace ShampanExam.Service.Question
     {
         CommonRepository _commonRepo = new CommonRepository();
 
-        // =========================== INSERT HEADER + questionSetDetailList ===========================
-        public async Task<ResultVM> Insert(QuestionSetHeaderVM vm, SqlTransaction Vtransaction = null, SqlConnection VcurrConn = null)
+        // Insert
+        public async Task<ResultVM> Insert(QuestionSetHeaderVM questionSetHeader)
         {
-            QuestionSetRepository _repo = new QuestionSetRepository();
-            ResultVM result = new() { Status = "Fail", Message = "Error", Id = "0" };
+            QuestionSetHeaderRepository _repo = new QuestionSetHeaderRepository();
+            QuestionSetDetailRepository questionSetquestionSetDetailListRepository = new QuestionSetDetailRepository();
+            _commonRepo = new CommonRepository();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            bool isNewConnection = false;
             SqlConnection conn = null;
             SqlTransaction transaction = null;
 
             try
             {
-                #region Connection and Transaction
-                conn = VcurrConn ?? new SqlConnection(DatabaseHelper.GetConnectionString());
-                if (conn.State != ConnectionState.Open)
-                    conn.Open();
+                conn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
+                conn.Open();
+                isNewConnection = true;
+                transaction = conn.BeginTransaction();
 
-                transaction = Vtransaction ?? conn.BeginTransaction();
+                if (questionSetHeader.questionSetDetailList == null || !questionSetHeader.questionSetDetailList.Any())
+                {
+                    throw new Exception("QuestionSetquestionSetDetailList must have at least one detail!");
+                }
+
+                #region Check Exist Data
+                string[] conditionField = { "Name" };
+                string[] conditionValue = { questionSetHeader.Name.Trim() };
+
+                bool exist = _commonRepo.CheckExists("QuestionSetHeaders", conditionField, conditionValue, conn, transaction);
+
+                if (exist)
+                {
+                    result.Message = "Data Already Exist!";
+                    throw new Exception("Data Already Exist!");
+                }
                 #endregion
 
-                // 🔹 Insert Header
-                result = await _repo.Insert(vm, conn, transaction);
-                if (result.Status.ToLower() != "success")
-                    throw new Exception(result.Message);
+                //string code = _commonRepo.CodeGenerationNo("QuestionSet", "QuestionSet", conn, transaction);
+                //if (!string.IsNullOrEmpty(code))
+                //{
+                //    questionSetHeader.Code = code;
 
-                vm.Id = Convert.ToInt32(result.Id);
+                result = await _repo.Insert(questionSetHeader, conn, transaction);
 
-                // 🔹 Insert questionSetDetailList
-                if (vm.questionSetDetailList != null && vm.questionSetDetailList.Any())
+                questionSetHeader.Id = Convert.ToInt32(result.Id);
+
+                if (result.Status.ToLower() == "success")
                 {
-                    foreach (var detail in vm.questionSetDetailList)
+                    foreach (var questionSetDetail in questionSetHeader.questionSetDetailList)
                     {
-                        detail.QuestionSetHeaderId = vm.Id;
-                        var detailResult = await _repo.InsertDetail(detail, conn, transaction);
-                        if (detailResult.Status.ToLower() != "success")
-                            throw new Exception(detailResult.Message);
+                        questionSetDetail.QuestionSetHeaderId = questionSetHeader.Id;
+
+                        var resultDetail = await questionSetquestionSetDetailListRepository.Insert(questionSetDetail, conn, transaction);
+                        if (resultDetail.Status.ToLower() != "success")
+                        {
+                            throw new Exception(resultDetail.Message);
+                        }
                     }
                 }
 
-                #region Commit
-                if (Vtransaction == null)
+                if (isNewConnection && result.Status == "Success")
+                {
                     transaction.Commit();
-                #endregion
+                }
+                else
+                {
+                    throw new Exception(result.Message);
+                }
 
-                result.Status = "Success";
-                result.Message = "Question Set inserted successfully.";
-                result.Id = vm.Id.ToString();
+                return result;
             }
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("Code Generation Failed!");
+            //    }
+            //}
             catch (Exception ex)
             {
-                if (Vtransaction == null && transaction != null)
-                    transaction.Rollback();
-
+                if (transaction != null && isNewConnection) transaction.Rollback();
                 result.Message = ex.Message;
                 result.ExMessage = ex.ToString();
+                return result;
             }
             finally
             {
-                if (VcurrConn == null && conn != null)
-                {
-                    if (conn.State == ConnectionState.Open)
-                        conn.Close();
-                }
+                if (isNewConnection && conn != null) conn.Close();
             }
-
-            return result;
         }
 
-        // =========================== UPDATE HEADER + questionSetDetailList ===========================
-        public async Task<ResultVM> Update(QuestionSetHeaderVM vm, SqlTransaction Vtransaction = null, SqlConnection VcurrConn = null)
+        // Update
+        public async Task<ResultVM> Update(QuestionSetHeaderVM questionSetHeader)
         {
-            QuestionSetRepository _repo = new QuestionSetRepository();
-            ResultVM result = new() { Status = "Fail", Message = "Error", Id = vm.Id.ToString() };
+            QuestionSetHeaderRepository _repo = new QuestionSetHeaderRepository();
+            QuestionSetDetailRepository questionSetquestionSetDetailListRepository = new QuestionSetDetailRepository();
+            _commonRepo = new CommonRepository();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            bool isNewConnection = false;
             SqlConnection conn = null;
             SqlTransaction transaction = null;
 
             try
             {
-                #region Connection
-                conn = VcurrConn ?? new SqlConnection(DatabaseHelper.GetConnectionString());
-                if (conn.State != ConnectionState.Open)
-                    conn.Open();
+                conn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
+                conn.Open();
+                isNewConnection = true;
+                transaction = conn.BeginTransaction();
 
-                transaction = Vtransaction ?? conn.BeginTransaction();
-                #endregion
-
-                // Delete existing questionSetDetailList first
-                var delRes = _commonRepo.questionSetDetailListDelete("QuestionSetDetails", new[] { "QuestionSetHeaderId" }, new[] { vm.Id.ToString() }, conn, transaction);
-                if (delRes.Status == "Fail")
-                    throw new Exception("Error deleting old questionSetDetailList.");
-
-                // Update header
-                result = await _repo.Update(vm, conn, transaction);
-                if (result.Status.ToLower() != "success")
-                    throw new Exception(result.Message);
-
-                // Re-insert questionSetDetailList
-                if (vm.questionSetDetailList != null && vm.questionSetDetailList.Any())
+                if (questionSetHeader.questionSetDetailList == null || !questionSetHeader.questionSetDetailList.Any())
                 {
-                    foreach (var d in vm.questionSetDetailList)
+                    throw new Exception("QuestionSetDetails must have at least one detail!");
+                }
+
+                var record = _commonRepo.questionSetDetailListDelete("QuestionSetDetails", new[] { "QuestionSetHeaderId" }, new[] { questionSetHeader.Id.ToString() }, conn, transaction);
+                if (record.Status == "Fail")
+                {
+                    throw new Exception("Error in Delete for QuestionSetDetails Data.");
+                }
+
+                result = await _repo.Update(questionSetHeader, conn, transaction);
+
+                if (result.Status.ToLower() == "success")
+                {
+                    foreach (var questionSetDetail in questionSetHeader.questionSetDetailList)
                     {
-                        d.QuestionSetHeaderId = vm.Id;
-                        var insRes = await _repo.InsertDetail(d, conn, transaction);
-                        if (insRes.Status.ToLower() != "success")
-                            throw new Exception(insRes.Message);
+                        questionSetDetail.QuestionSetHeaderId = questionSetHeader.Id;
+
+                        var resultDetail = await questionSetquestionSetDetailListRepository.Insert(questionSetDetail, conn, transaction);
+                        if (resultDetail.Status.ToLower() != "success")
+                            throw new Exception(resultDetail.Message);
                     }
                 }
 
-                #region Commit
-                if (Vtransaction == null)
+                if (isNewConnection && result.Status == "Success")
+                {
                     transaction.Commit();
-                #endregion
+                }
+                else
+                {
+                    throw new Exception(result.Message);
+                }
 
-                result.Status = "Success";
-                result.Message = "Question Set updated successfully.";
+                return result;
             }
             catch (Exception ex)
             {
-                if (Vtransaction == null && transaction != null)
-                    transaction.Rollback();
-
+                if (transaction != null && isNewConnection) transaction.Rollback();
                 result.Message = ex.Message;
                 result.ExMessage = ex.ToString();
+                return result;
             }
             finally
             {
-                if (VcurrConn == null && conn != null && conn.State == ConnectionState.Open)
-                    conn.Close();
+                if (isNewConnection && conn != null) conn.Close();
             }
-
-            return result;
         }
+
+
+        //// =========================== INSERT HEADER + questionSetDetailList ===========================
+        //public async Task<ResultVM> Insert(QuestionSetHeaderVM vm, SqlTransaction Vtransaction = null, SqlConnection VcurrConn = null)
+        //{
+        //    QuestionSetRepository _repo = new QuestionSetRepository();
+        //    ResultVM result = new() { Status = "Fail", Message = "Error", Id = "0" };
+        //    SqlConnection conn = null;
+        //    SqlTransaction transaction = null;
+
+        //    try
+        //    {
+        //        #region Connection and Transaction
+        //        conn = VcurrConn ?? new SqlConnection(DatabaseHelper.GetConnectionString());
+        //        if (conn.State != ConnectionState.Open)
+        //            conn.Open();
+
+        //        transaction = Vtransaction ?? conn.BeginTransaction();
+        //        #endregion
+
+        //        // 🔹 Insert Header
+        //        result = await _repo.Insert(vm, conn, transaction);
+        //        if (result.Status.ToLower() != "success")
+        //            throw new Exception(result.Message);
+
+        //        vm.Id = Convert.ToInt32(result.Id);
+
+        //        // 🔹 Insert questionSetDetailList
+        //        if (vm.questionSetDetailList != null && vm.questionSetDetailList.Any())
+        //        {
+        //            foreach (var detail in vm.questionSetDetailList)
+        //            {
+        //                detail.QuestionSetHeaderId = vm.Id;
+        //                var detailResult = await _repo.InsertDetail(detail, conn, transaction);
+        //                if (detailResult.Status.ToLower() != "success")
+        //                    throw new Exception(detailResult.Message);
+        //            }
+        //        }
+
+        //        #region Commit
+        //        if (Vtransaction == null)
+        //            transaction.Commit();
+        //        #endregion
+
+        //        result.Status = "Success";
+        //        result.Message = "Question Set inserted successfully.";
+        //        result.Id = vm.Id.ToString();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        if (Vtransaction == null && transaction != null)
+        //            transaction.Rollback();
+
+        //        result.Message = ex.Message;
+        //        result.ExMessage = ex.ToString();
+        //    }
+        //    finally
+        //    {
+        //        if (VcurrConn == null && conn != null)
+        //        {
+        //            if (conn.State == ConnectionState.Open)
+        //                conn.Close();
+        //        }
+        //    }
+
+        //    return result;
+        //}
+
+        //// =========================== UPDATE HEADER + questionSetDetailList ===========================
+        //public async Task<ResultVM> Update(QuestionSetHeaderVM vm, SqlTransaction Vtransaction = null, SqlConnection VcurrConn = null)
+        //{
+        //    QuestionSetRepository _repo = new QuestionSetRepository();
+        //    ResultVM result = new() { Status = "Fail", Message = "Error", Id = vm.Id.ToString() };
+        //    SqlConnection conn = null;
+        //    SqlTransaction transaction = null;
+
+        //    try
+        //    {
+        //        #region Connection
+        //        conn = VcurrConn ?? new SqlConnection(DatabaseHelper.GetConnectionString());
+        //        if (conn.State != ConnectionState.Open)
+        //            conn.Open();
+
+        //        transaction = Vtransaction ?? conn.BeginTransaction();
+        //        #endregion
+
+        //        // Delete existing questionSetDetailList first
+        //        var delRes = _commonRepo.questionSetDetailListDelete("QuestionSetDetails", new[] { "QuestionSetHeaderId" }, new[] { vm.Id.ToString() }, conn, transaction);
+        //        if (delRes.Status == "Fail")
+        //            throw new Exception("Error deleting old questionSetDetailList.");
+
+        //        // Update header
+        //        result = await _repo.Update(vm, conn, transaction);
+        //        if (result.Status.ToLower() != "success")
+        //            throw new Exception(result.Message);
+
+        //        // Re-insert questionSetDetailList
+        //        if (vm.questionSetDetailList != null && vm.questionSetDetailList.Any())
+        //        {
+        //            foreach (var d in vm.questionSetDetailList)
+        //            {
+        //                d.QuestionSetHeaderId = vm.Id;
+        //                var insRes = await _repo.InsertDetail(d, conn, transaction);
+        //                if (insRes.Status.ToLower() != "success")
+        //                    throw new Exception(insRes.Message);
+        //            }
+        //        }
+
+        //        #region Commit
+        //        if (Vtransaction == null)
+        //            transaction.Commit();
+        //        #endregion
+
+        //        result.Status = "Success";
+        //        result.Message = "Question Set updated successfully.";
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        if (Vtransaction == null && transaction != null)
+        //            transaction.Rollback();
+
+        //        result.Message = ex.Message;
+        //        result.ExMessage = ex.ToString();
+        //    }
+        //    finally
+        //    {
+        //        if (VcurrConn == null && conn != null && conn.State == ConnectionState.Open)
+        //            conn.Close();
+        //    }
+
+        //    return result;
+        //}
 
         // =========================== DELETE MULTIPLE HEADERS ===========================
         public async Task<ResultVM> MultipleDelete(CommonVM vm, SqlTransaction Vtransaction = null, SqlConnection VcurrConn = null)

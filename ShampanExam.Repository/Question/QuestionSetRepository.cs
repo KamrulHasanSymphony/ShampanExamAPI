@@ -14,21 +14,26 @@ namespace ShampanExam.Repository.Question
 {
     public class QuestionSetRepository : CommonRepository
     {
-        // =========================== INSERT HEADER ===========================
-        public async Task<ResultVM> Insert(QuestionSetHeaderVM vm, SqlConnection conn, SqlTransaction transaction)
+        #region Insert
+        public async Task<ResultVM> Insert(QuestionSetHeaderVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
         {
-            ResultVM result = new() { Status = "Fail", Message = "Error", Id = "0" };
-
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
             try
             {
+                if (conn == null) throw new Exception("Database connection failed!");
+
                 string query = @"
                 INSERT INTO QuestionSetHeaders
-                (Name, TotalMark, Remarks, IsActive, IsArchive, CreatedBy, CreatedAt, CreatedFrom)
+                (
+                    Name, TotalMark, Remarks, IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt
+                )
                 VALUES
-                (@Name, @TotalMark, @Remarks, @IsActive, @IsArchive, @CreatedBy, GETDATE(), @CreatedFrom);
+                (
+                    @Name, @TotalMark, @Remarks, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE()
+                );
                 SELECT SCOPE_IDENTITY();";
 
-                using (SqlCommand cmd = new(query, conn, transaction))
+                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
                 {
                     cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@TotalMark", vm.TotalMark);
@@ -38,42 +43,44 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@CreatedFrom", vm.CreatedFrom ?? (object)DBNull.Value);
 
-                    var id = await cmd.ExecuteScalarAsync();
-                    vm.Id = Convert.ToInt32(id);
-                    result.Status = "Success";
-                    result.Message = "Header inserted successfully.";
-                    result.Id = vm.Id.ToString();
-                    result.DataVM = vm;
+                    vm.Id = Convert.ToInt32(cmd.ExecuteScalar());
                 }
+
+                result.Status = "Success";
+                result.Message = "Data inserted successfully.";
+                result.Id = vm.Id.ToString();
+                result.DataVM = vm;
             }
             catch (Exception ex)
             {
                 result.Message = ex.Message;
                 result.ExMessage = ex.ToString();
             }
-
             return result;
         }
+        #endregion
 
-        // =========================== UPDATE HEADER ===========================
-        public async Task<ResultVM> Update(QuestionSetHeaderVM vm, SqlConnection conn, SqlTransaction transaction)
+        #region Update
+        public async Task<ResultVM> Update(QuestionSetHeaderVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
         {
-            ResultVM result = new() { Status = "Fail", Message = "Error", Id = vm.Id.ToString() };
-
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", Id = vm.Id.ToString(), DataVM = vm };
             try
             {
+                if (conn == null) throw new Exception("Database connection failed!");
+
                 string query = @"
-                UPDATE QuestionSetHeaders SET
+                UPDATE QuestionSetHeaders 
+                SET 
                     Name = @Name,
                     TotalMark = @TotalMark,
                     Remarks = @Remarks,
                     IsActive = @IsActive,
                     LastUpdateBy = @LastUpdateBy,
-                    LastUpdateAt = GETDATE(),
-                    LastUpdateFrom = @LastUpdateFrom
+                    LastUpdateFrom = @LastUpdateFrom,
+                    LastUpdateAt = GETDATE()
                 WHERE Id = @Id";
 
-                using (SqlCommand cmd = new(query, conn, transaction))
+                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
                 {
                     cmd.Parameters.AddWithValue("@Id", vm.Id);
                     cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
@@ -83,9 +90,16 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@LastUpdateBy", vm.LastUpdateBy ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@LastUpdateFrom", vm.LastUpdateFrom ?? (object)DBNull.Value);
 
-                    int rows = await cmd.ExecuteNonQueryAsync();
-                    result.Status = rows > 0 ? "Success" : "Fail";
-                    result.Message = rows > 0 ? "Header updated successfully." : "No data updated.";
+                    int rows = cmd.ExecuteNonQuery();
+                    if (rows > 0)
+                    {
+                        result.Status = "Success";
+                        result.Message = "Data updated successfully.";
+                    }
+                    else
+                    {
+                        throw new Exception("No rows updated.");
+                    }
                 }
             }
             catch (Exception ex)
@@ -93,9 +107,92 @@ namespace ShampanExam.Repository.Question
                 result.Message = ex.Message;
                 result.ExMessage = ex.ToString();
             }
-
             return result;
         }
+        #endregion
+
+        //// =========================== INSERT HEADER ===========================
+        //public async Task<ResultVM> Insert(QuestionSetHeaderVM vm, SqlConnection conn, SqlTransaction transaction)
+        //{
+        //    ResultVM result = new() { Status = "Fail", Message = "Error", Id = "0" };
+
+        //    try
+        //    {
+        //        string query = @"
+        //        INSERT INTO QuestionSetHeaders
+        //        (Name, TotalMark, Remarks, IsActive, IsArchive, CreatedBy, CreatedAt, CreatedFrom)
+        //        VALUES
+        //        (@Name, @TotalMark, @Remarks, @IsActive, @IsArchive, @CreatedBy, GETDATE(), @CreatedFrom);
+        //        SELECT SCOPE_IDENTITY();";
+
+        //        using (SqlCommand cmd = new(query, conn, transaction))
+        //        {
+        //            cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@TotalMark", vm.TotalMark);
+        //            cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
+        //            cmd.Parameters.AddWithValue("@IsArchive", vm.IsArchive);
+        //            cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@CreatedFrom", vm.CreatedFrom ?? (object)DBNull.Value);
+
+        //            var id = await cmd.ExecuteScalarAsync();
+        //            vm.Id = Convert.ToInt32(id);
+        //            result.Status = "Success";
+        //            result.Message = "Header inserted successfully.";
+        //            result.Id = vm.Id.ToString();
+        //            result.DataVM = vm;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Message = ex.Message;
+        //        result.ExMessage = ex.ToString();
+        //    }
+
+        //    return result;
+        //}
+
+        //// =========================== UPDATE HEADER ===========================
+        //public async Task<ResultVM> Update(QuestionSetHeaderVM vm, SqlConnection conn, SqlTransaction transaction)
+        //{
+        //    ResultVM result = new() { Status = "Fail", Message = "Error", Id = vm.Id.ToString() };
+
+        //    try
+        //    {
+        //        string query = @"
+        //        UPDATE QuestionSetHeaders SET
+        //            Name = @Name,
+        //            TotalMark = @TotalMark,
+        //            Remarks = @Remarks,
+        //            IsActive = @IsActive,
+        //            LastUpdateBy = @LastUpdateBy,
+        //            LastUpdateAt = GETDATE(),
+        //            LastUpdateFrom = @LastUpdateFrom
+        //        WHERE Id = @Id";
+
+        //        using (SqlCommand cmd = new(query, conn, transaction))
+        //        {
+        //            cmd.Parameters.AddWithValue("@Id", vm.Id);
+        //            cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@TotalMark", vm.TotalMark);
+        //            cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
+        //            cmd.Parameters.AddWithValue("@LastUpdateBy", vm.LastUpdateBy ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@LastUpdateFrom", vm.LastUpdateFrom ?? (object)DBNull.Value);
+
+        //            int rows = await cmd.ExecuteNonQueryAsync();
+        //            result.Status = rows > 0 ? "Success" : "Fail";
+        //            result.Message = rows > 0 ? "Header updated successfully." : "No data updated.";
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Message = ex.Message;
+        //        result.ExMessage = ex.ToString();
+        //    }
+
+        //    return result;
+        //}
 
         // =========================== DELETE HEADER ===========================
         public async Task<ResultVM> MultipleDelete(CommonVM vm, SqlConnection conn, SqlTransaction transaction)
