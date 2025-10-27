@@ -37,7 +37,7 @@ namespace ShampanExamAPI.Controllers.Login
             {
                 var claims = new List<Claim>
                     {
-                        new Claim("Database", "Tailor_DB"),
+                        new Claim("Database", "Question_DB"),
                     };
 
                 if (model.Operation == "update")
