@@ -16,7 +16,7 @@ namespace ShampanExam.Service.Grades
         public async Task<ResultVM> Insert(GradeHeaderVM gradeHeader)
         {
             GradeHeaderRepository _repo = new GradeHeaderRepository();
-            GradeDetailRepository gradeDetailsRepository = new GradeDetailRepository();
+            GradeDetailRepository gradequestionSetDetailListRepository = new GradeDetailRepository();
             _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
@@ -33,7 +33,7 @@ namespace ShampanExam.Service.Grades
 
                 if (gradeHeader.gradeDetailList == null || !gradeHeader.gradeDetailList.Any())
                 {
-                    throw new Exception("GradeDetails must have at least one detail!");
+                    throw new Exception("GradequestionSetDetailList must have at least one detail!");
                 }
 
                 #region Check Exist Data
@@ -59,7 +59,7 @@ namespace ShampanExam.Service.Grades
                     {
                         gradeDetail.GradeId = gradeHeader.Id;
 
-                        var resultDetail = await gradeDetailsRepository.Insert(gradeDetail, conn, transaction);
+                        var resultDetail = await gradequestionSetDetailListRepository.Insert(gradeDetail, conn, transaction);
                         if (resultDetail.Status.ToLower() != "success")
                         {
                             throw new Exception(resultDetail.Message);
@@ -95,7 +95,7 @@ namespace ShampanExam.Service.Grades
         public async Task<ResultVM> Update(GradeHeaderVM gradeHeader)
         {
             GradeHeaderRepository _repo = new GradeHeaderRepository();
-            GradeDetailRepository gradeDetailsRepository = new GradeDetailRepository();
+            GradeDetailRepository gradequestionSetDetailListRepository = new GradeDetailRepository();
             _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
@@ -112,13 +112,13 @@ namespace ShampanExam.Service.Grades
 
                 if (gradeHeader.gradeDetailList == null || !gradeHeader.gradeDetailList.Any())
                 {
-                    throw new Exception("GradeDetails must have at least one detail!");
+                    throw new Exception("GradequestionSetDetailList must have at least one detail!");
                 }
 
-                var record = _commonRepo.DetailsDelete("GradeDetails", new[] { "GradeId" }, new[] { gradeHeader.Id.ToString() }, conn, transaction);
+                var record = _commonRepo.questionSetDetailListDelete("GradequestionSetDetailList", new[] { "GradeId" }, new[] { gradeHeader.Id.ToString() }, conn, transaction);
                 if (record.Status == "Fail")
                 {
-                    throw new Exception("Error in Delete for GradeDetails Data.");
+                    throw new Exception("Error in Delete for GradequestionSetDetailList Data.");
                 }
 
                 result = await _repo.Update(gradeHeader, conn, transaction);
@@ -129,7 +129,7 @@ namespace ShampanExam.Service.Grades
                     {
                         gradeDetail.GradeId = gradeHeader.Id;
 
-                        var resultDetail = await gradeDetailsRepository.Insert(gradeDetail, conn, transaction);
+                        var resultDetail = await gradequestionSetDetailListRepository.Insert(gradeDetail, conn, transaction);
                         if (resultDetail.Status.ToLower() != "success")
                             throw new Exception(resultDetail.Message);
                     }

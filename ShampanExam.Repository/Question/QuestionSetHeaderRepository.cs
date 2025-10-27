@@ -162,16 +162,16 @@ namespace ShampanExam.Repository.Question
                     LastUpdateAt = row.Field<string>("LastUpdateAt")
                 }).ToList();
 
-                QuestionSetDetailRepository questionsetdetailsrepository = new QuestionSetDetailRepository();
-                // ✅ Load Design Category Details
-                var QuestionDetailsDataList = questionsetdetailsrepository.List(new[] { "M.QuestionSetHeaderId" }, conditionalValues, vm, conn, transaction);
-                if (QuestionDetailsDataList.Status == "Success" && QuestionDetailsDataList.DataVM is DataTable dt2)
+                QuestionSetDetailRepository questionsetquestionSetDetailListrepository = new QuestionSetDetailRepository();
+                // ✅ Load Design Category questionSetDetailList
+                var QuestionquestionSetDetailListDataList = questionsetquestionSetDetailListrepository.List(new[] { "M.QuestionSetHeaderId" }, conditionalValues, vm, conn, transaction);
+                if (QuestionquestionSetDetailListDataList.Status == "Success" && QuestionquestionSetDetailListDataList.DataVM is DataTable dt2)
                 {
                     string json = JsonConvert.SerializeObject(dt2);
-                    var QuestionDetails = JsonConvert.DeserializeObject<List<QuestionSetDetailVM>>(json);
+                    var QuestionquestionSetDetailList = JsonConvert.DeserializeObject<List<QuestionSetDetailVM>>(json);
 
                     if (list.Any())
-                        list.FirstOrDefault().questionSetDetailList = QuestionDetails;
+                        list.FirstOrDefault().questionSetDetailList = QuestionquestionSetDetailList;
                 }
 
                 result.Status = "Success";

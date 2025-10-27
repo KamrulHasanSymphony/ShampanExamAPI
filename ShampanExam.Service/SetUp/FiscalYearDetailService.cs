@@ -7,7 +7,7 @@ using System.Data.SqlClient;
 
 namespace ShampanExam.Service.SetUp
 {
-    public class FiscalYearDetailService
+    public class FiscalYearquestionSetDetailListervice
     {
         public async Task<ResultVM> Insert(FiscalYearDetailVM fiscalYearDetail)
         {

@@ -14,11 +14,11 @@ namespace ShampanExamAPI.Controllers.SetUp
         public async Task<ResultVM> Insert(FiscalYearDetailVM fiscalYearDetail)
         {
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
-            FiscalYearDetailService _fiscalYearDetailService = new FiscalYearDetailService();
+            FiscalYearquestionSetDetailListervice _fiscalYearquestionSetDetailListervice = new FiscalYearquestionSetDetailListervice();
 
             try
             {
-                resultVM = await _fiscalYearDetailService.Insert(fiscalYearDetail);
+                resultVM = await _fiscalYearquestionSetDetailListervice.Insert(fiscalYearDetail);
                 return resultVM;
             }
             catch (Exception ex)
@@ -40,8 +40,8 @@ namespace ShampanExamAPI.Controllers.SetUp
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
             try
             {
-                FiscalYearDetailService _fiscalYearDetailService = new FiscalYearDetailService();
-                resultVM = await _fiscalYearDetailService.Update(fiscalYearDetail);
+                FiscalYearquestionSetDetailListervice _fiscalYearquestionSetDetailListervice = new FiscalYearquestionSetDetailListervice();
+                resultVM = await _fiscalYearquestionSetDetailListervice.Update(fiscalYearDetail);
                 return resultVM;
             }
             catch (Exception ex)
@@ -63,12 +63,12 @@ namespace ShampanExamAPI.Controllers.SetUp
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, IDs = null, DataVM = null };
             try
             {
-                FiscalYearDetailService _fiscalYearDetailService = new FiscalYearDetailService();
+                FiscalYearquestionSetDetailListervice _fiscalYearquestionSetDetailListervice = new FiscalYearquestionSetDetailListervice();
 
                 string?[] IDs = null;
                 IDs = new string?[] { fiscalYearDetail.Id.ToString() };
 
-                resultVM = await _fiscalYearDetailService.Delete(IDs);
+                resultVM = await _fiscalYearquestionSetDetailListervice.Delete(IDs);
                 return resultVM;
             }
             catch (Exception ex)
@@ -90,8 +90,8 @@ namespace ShampanExamAPI.Controllers.SetUp
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
             try
             {
-                FiscalYearDetailService _fiscalYearDetailService = new FiscalYearDetailService();
-                resultVM = await _fiscalYearDetailService.List(new[] { "M.Id" }, new[] { fiscalYearDetail.Id.ToString() }, null);
+                FiscalYearquestionSetDetailListervice _fiscalYearquestionSetDetailListervice = new FiscalYearquestionSetDetailListervice();
+                resultVM = await _fiscalYearquestionSetDetailListervice.List(new[] { "M.Id" }, new[] { fiscalYearDetail.Id.ToString() }, null);
                 return resultVM;
             }
             catch (Exception ex)
@@ -113,8 +113,8 @@ namespace ShampanExamAPI.Controllers.SetUp
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
             try
             {
-                FiscalYearDetailService _fiscalYearDetailService = new FiscalYearDetailService();
-                resultVM = await _fiscalYearDetailService.ListAsDataTable(new[] { "" }, new[] { "" });
+                FiscalYearquestionSetDetailListervice _fiscalYearquestionSetDetailListervice = new FiscalYearquestionSetDetailListervice();
+                resultVM = await _fiscalYearquestionSetDetailListervice.ListAsDataTable(new[] { "" }, new[] { "" });
                 return resultVM;
             }
             catch (Exception ex)
@@ -136,8 +136,8 @@ namespace ShampanExamAPI.Controllers.SetUp
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
             try
             {
-                FiscalYearDetailService _fiscalYearDetailService = new FiscalYearDetailService();
-                resultVM = await _fiscalYearDetailService.Dropdown(); // Adjust if Dropdown requires a different method
+                FiscalYearquestionSetDetailListervice _fiscalYearquestionSetDetailListervice = new FiscalYearquestionSetDetailListervice();
+                resultVM = await _fiscalYearquestionSetDetailListervice.Dropdown(); // Adjust if Dropdown requires a different method
                 return resultVM;
             }
             catch (Exception ex)

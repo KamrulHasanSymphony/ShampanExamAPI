@@ -269,7 +269,7 @@ SELECT
     MonthName,
     MonthLock
 
-FROM FiscalYearDetails
+FROM FiscalYearquestionSetDetailList
 WHERE 1 = 1";
 
 
@@ -312,7 +312,7 @@ WHERE 1 = 1";
 
                 string query = @"
 SELECT Id, Name
-FROM FiscalYearDetails
+FROM FiscalYearquestionSetDetailList
 WHERE IsActive = 1
 ORDER BY Name";
 

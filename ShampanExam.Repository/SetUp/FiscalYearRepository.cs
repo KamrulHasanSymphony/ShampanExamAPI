@@ -50,7 +50,7 @@ namespace ShampanExam.Repository.SetUp
                     vm.Id = Convert.ToInt32(cmd.ExecuteScalar());
 
 
-                    query = @" INSERT INTO FiscalYearDetails (
+                    query = @" INSERT INTO FiscalYearquestionSetDetailList (
                             FiscalYearId,
                             Year,
                             Remarks,
@@ -76,21 +76,21 @@ namespace ShampanExam.Repository.SetUp
                             @CreatedOn,     
                             @CreatedFrom
                         )";
-                    foreach (FiscalYearDetailVM item in vm.fiscalYearDetails)
+                    foreach (FiscalYearDetailVM item in vm.fiscalYearquestionSetDetailList)
                     {
-                        SqlCommand cmdDetails = new SqlCommand(query, conn, transaction);
-                        cmdDetails.Parameters.AddWithValue("@FiscalYearId", vm.Id);
-                        cmdDetails.Parameters.AddWithValue("@Year", vm.Year);
-                        cmdDetails.Parameters.AddWithValue("@Remarks", item.Remarks ?? "-");
-                        cmdDetails.Parameters.AddWithValue("@MonthId", item.MonthId ?? 0);
-                        cmdDetails.Parameters.AddWithValue("@MonthStart", item.MonthStart);
-                        cmdDetails.Parameters.AddWithValue("@MonthEnd", item.MonthEnd);
-                        cmdDetails.Parameters.AddWithValue("@MonthName", item.MonthName);
-                        cmdDetails.Parameters.AddWithValue("@MonthLock", item.MonthLock);
-                        cmdDetails.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy);
-                        cmdDetails.Parameters.AddWithValue("@CreatedFrom", vm.CreatedFrom);
+                        SqlCommand cmdquestionSetDetailList = new SqlCommand(query, conn, transaction);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@FiscalYearId", vm.Id);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@Year", vm.Year);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@Remarks", item.Remarks ?? "-");
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@MonthId", item.MonthId ?? 0);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@MonthStart", item.MonthStart);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@MonthEnd", item.MonthEnd);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@MonthName", item.MonthName);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@MonthLock", item.MonthLock);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@CreatedFrom", vm.CreatedFrom);
 
-                        cmdDetails.ExecuteNonQuery();
+                        cmdquestionSetDetailList.ExecuteNonQuery();
                     }
 
                     result.Status = "Success";
@@ -145,18 +145,18 @@ namespace ShampanExam.Repository.SetUp
 
                     int rowsAffected = cmd.ExecuteNonQuery();
 
-                    foreach (FiscalYearDetailVM item in vm.fiscalYearDetails)
+                    foreach (FiscalYearDetailVM item in vm.fiscalYearquestionSetDetailList)
                     {
-                        query = @" Update FiscalYearDetails set
+                        query = @" Update FiscalYearquestionSetDetailList set
                               MonthLock =@MonthLock
                               ,Remarks=@Remarks
                               where Id=@Id
                               ";
-                        SqlCommand cmdDetails = new SqlCommand(query, conn, transaction);
-                        cmdDetails.Parameters.AddWithValue("@Id", item.Id);
-                        cmdDetails.Parameters.AddWithValue("@MonthLock", item.MonthLock);
-                        cmdDetails.Parameters.AddWithValue("@Remarks", item.Remarks ?? Convert.DBNull);
-                        cmdDetails.ExecuteNonQuery();
+                        SqlCommand cmdquestionSetDetailList = new SqlCommand(query, conn, transaction);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@Id", item.Id);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@MonthLock", item.MonthLock);
+                        cmdquestionSetDetailList.Parameters.AddWithValue("@Remarks", item.Remarks ?? Convert.DBNull);
+                        cmdquestionSetDetailList.ExecuteNonQuery();
                     }
 
                     if (rowsAffected > 0)
@@ -205,8 +205,8 @@ namespace ShampanExam.Repository.SetUp
                 // Delete FiscalYears query
                 string deleteFiscalYearsQuery = $"DELETE FROM FiscalYears WHERE Id IN ({inClause})";
 
-                // Delete FiscalYearDetails query
-                string deleteFiscalYearDetailsQuery = $"DELETE FROM FiscalYearDetails WHERE FiscalYearId IN ({inClause})";
+                // Delete FiscalYearquestionSetDetailList query
+                string deleteFiscalYearquestionSetDetailListQuery = $"DELETE FROM FiscalYearquestionSetDetailList WHERE FiscalYearId IN ({inClause})";
 
                 // Delete FiscalYears
                 using (SqlCommand cmd = new SqlCommand(deleteFiscalYearsQuery, conn, transaction))
@@ -223,8 +223,8 @@ namespace ShampanExam.Repository.SetUp
                     }
                 }
 
-                // Delete related FiscalYearDetails
-                using (SqlCommand cmd = new SqlCommand(deleteFiscalYearDetailsQuery, conn, transaction))
+                // Delete related FiscalYearquestionSetDetailList
+                using (SqlCommand cmd = new SqlCommand(deleteFiscalYearquestionSetDetailListQuery, conn, transaction))
                 {
                     for (int i = 0; i < vm.IDs.Length; i++)
                     {
@@ -247,7 +247,7 @@ namespace ShampanExam.Repository.SetUp
             catch (Exception ex)
             {
                 
-                // Capture exception details
+                // Capture exception questionSetDetailList
                 result.ExMessage = ex.Message;
                 result.Message = "Error in Delete.";
                 return result;
@@ -316,14 +316,14 @@ namespace ShampanExam.Repository.SetUp
                     });
                 }
 
-                var detailsDataList = DetailsList(new[] { "D.FiscalYearId" }, conditionalValues, vm, conn, transaction);
+                var questionSetDetailListDataList = questionSetDetailListList(new[] { "D.FiscalYearId" }, conditionalValues, vm, conn, transaction);
 
-                if (detailsDataList.Status == "Success" && detailsDataList.DataVM is DataTable dt)
+                if (questionSetDetailListDataList.Status == "Success" && questionSetDetailListDataList.DataVM is DataTable dt)
                 {
                     string json = JsonConvert.SerializeObject(dt);
-                    var details = JsonConvert.DeserializeObject<List<FiscalYearDetailVM>>(json);
+                    var questionSetDetailList = JsonConvert.DeserializeObject<List<FiscalYearDetailVM>>(json);
 
-                    model.FirstOrDefault().fiscalYearDetails = details;
+                    model.FirstOrDefault().fiscalYearquestionSetDetailList = questionSetDetailList;
                 }
 
                 result.Status = "Success";
@@ -498,7 +498,7 @@ ORDER BY Name";
             }
         }
 
-        public ResultVM DetailsList(string[] conditionalFields, string[] conditionalValue, PeramModel vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
+        public ResultVM questionSetDetailListList(string[] conditionalFields, string[] conditionalValue, PeramModel vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
         {
             DataTable dataTable = new DataTable();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
@@ -521,7 +521,7 @@ ORDER BY Name";
                       ,MonthLock      
                       ,[Remarks]
                       ,[MonthId]
-                FROM FiscalYearDetails D
+                FROM FiscalYearquestionSetDetailList D
                 where 1=1";
 
                 if (vm != null && !string.IsNullOrEmpty(vm.Id))
@@ -545,7 +545,7 @@ ORDER BY Name";
                 objComm.Fill(dataTable);
 
                 result.Status = "Success";
-                result.Message = "Details Data retrieved successfully.";
+                result.Message = "questionSetDetailList Data retrieved successfully.";
                 result.DataVM = dataTable;
 
                 return result;

@@ -1,6 +1,7 @@
 ﻿using ShampanExam.Repository.Common;
 using ShampanExam.Repository.SetUp;
 using ShampanExam.ViewModel.CommonVMs;
+using ShampanExam.ViewModel.KendoCommon;
 using ShampanExam.ViewModel.Utility;
 using System.Data.SqlClient;
 
@@ -310,6 +311,62 @@ namespace ShampanExam.Service.Common
         }
 
 
+        public async Task<ResultVM> GetAllQuestionsByChapter(GridOptions options, string[] conditionalFields, string[] conditionalValues, string chapterId)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+
+            bool isNewConnection = false;
+            SqlConnection conn = null;
+            SqlTransaction transaction = null;
+            CommonRepository _repo = new CommonRepository();
+
+            try
+            {
+                conn = new SqlConnection(DatabaseHelper.GetConnectionString());
+                conn.Open();
+                isNewConnection = true;
+
+                transaction = conn.BeginTransaction();
+
+                // ✅ Add ScheduleID as a new condition
+                var allFields = new List<string>(conditionalFields ?? new string[] { });
+                var allValues = new List<string>(conditionalValues ?? new string[] { });
+
+                allFields.Add("Q.QuestionChapterId");
+                allValues.Add(chapterId);
+
+                // 🔁 Pass updated condition arrays
+                result = await _repo.GetAllQuestionsByChapter(options, allFields.ToArray(), allValues.ToArray(), conn, transaction);
+
+                if (isNewConnection && result.Status == "Success")
+                {
+                    transaction.Commit();
+                }
+                else
+                {
+                    throw new Exception(result.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                if (transaction != null && isNewConnection)
+                {
+                    transaction.Rollback();
+                }
+                result.Message = ex.Message.ToString();
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+            finally
+            {
+                if (isNewConnection && conn != null)
+                {
+                    conn.Close();
+                }
+            }
+        }
 
 
 

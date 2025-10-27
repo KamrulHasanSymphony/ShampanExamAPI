@@ -20,7 +20,7 @@ namespace ShampanExam.Repository.Question
                 if (transaction == null) transaction = conn.BeginTransaction();
 
                 string query = @"
-                INSERT INTO QuestionSetDetails
+                INSERT INTO QuestionSetquestionSetDetailList
                 (
                     QuestionSetHeaderId, QuestionHeaderId, QuestionMark
                 )
@@ -93,7 +93,7 @@ namespace ShampanExam.Repository.Question
                 objComm.Fill(dataTable);
 
                 result.Status = "Success";
-                result.Message = "Details Data retrieved successfully.";
+                result.Message = "questionSetDetailList Data retrieved successfully.";
                 result.DataVM = dataTable;
 
                 return result;

@@ -1,6 +1,8 @@
 ﻿using ShampanExam.ViewModel.CommonVMs;
+using ShampanExam.ViewModel.KendoCommon;
 using ShampanExam.ViewModel.SetUpVMs;
 using ShampanExam.ViewModel.Utility;
+using ShampanTailor.ViewModel.QuestionVM;
 using System.Data;
 using System.Data.SqlClient;
 using System.Text.RegularExpressions;
@@ -799,7 +801,7 @@ order by LastId Desc ";
             }
         }
 
-        public ResultVM DetailsDelete(string tableName, string[] conditionalFields, string[] conditionalValue, SqlConnection conn = null, SqlTransaction transaction = null)
+        public ResultVM questionSetDetailListDelete(string tableName, string[] conditionalFields, string[] conditionalValue, SqlConnection conn = null, SqlTransaction transaction = null)
         {
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
             try
@@ -815,7 +817,7 @@ order by LastId Desc ";
                 int totalRecords = Convert.ToInt32(command.ExecuteNonQuery());
 
                 result.Status = "Success";
-                result.Message = "Details data deleted.";
+                result.Message = "questionSetDetailList data deleted.";
                 result.Id = totalRecords.ToString();
                 result.DataVM = null;
 
@@ -1841,6 +1843,94 @@ WHERE P.IsActive = 1 ";
                 return result;
             }
         }
+
+
+        public async Task<ResultVM> GetAllQuestionsByChapter(GridOptions options, string[] conditionalFields, string[] conditionalValues, SqlConnection conn, SqlTransaction transaction)
+        {
+            bool isNewConnection = false;
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+
+            try
+            {
+                if (conn == null)
+                {
+                    conn = new SqlConnection(DatabaseHelper.GetConnectionString());
+                    conn.Open();
+                    isNewConnection = true;
+                }
+
+                var data = new GridEntity<QuestionHeaderVM>();
+
+                // ============================
+                // ✅ COUNT QUERY
+                // ============================
+                string sqlQuery = $@"
+            SELECT COUNT(DISTINCT Q.Id) AS totalcount
+            FROM QuestionHeaders Q
+            LEFT JOIN QuestionSubjects S ON Q.QuestionSubjectId = S.Id
+            LEFT JOIN QuestionChapters C ON Q.QuestionChapterId = C.Id
+            WHERE 1 = 1
+            --WHERE Q.QuestionChapterId = @QuestionChapterId
+            " + (options.filter.Filters.Count > 0
+                        ? " AND (" + GridQueryBuilder<QuestionHeaderVM>.FilterCondition(options.filter) + ")"
+                        : "");
+
+                sqlQuery = ApplyConditions(sqlQuery, conditionalFields, conditionalValues, false);
+
+                sqlQuery += @"
+            SELECT * 
+            FROM (
+                SELECT 
+                    ROW_NUMBER() OVER(ORDER BY " +
+                                (options.sort.Count > 0
+                                    ? "Q." + options.sort[0].field + " " + options.sort[0].dir
+                                    : "Q.Id DESC") + $@") AS rowindex,
+
+                    ISNULL(Q.Id, 0) AS Id,
+                    ISNULL(Q.QuestionText, '') AS QuestionText,
+                    ISNULL(Q.QuestionMark, 0) AS QuestionMark,
+                    ISNULL(S.Name, '') AS SubjectName,
+                    ISNULL(C.Name, '') AS ChapterName
+
+                FROM QuestionHeaders Q
+                LEFT JOIN QuestionSubjects S ON Q.QuestionSubjectId = S.Id
+                LEFT JOIN QuestionChapters C ON Q.QuestionChapterId = C.Id
+                WHERE 1 = 1
+                --WHERE Q.QuestionChapterId = @QuestionChapterId
+                " + (options.filter.Filters.Count > 0
+                            ? " AND (" + GridQueryBuilder<QuestionHeaderVM>.FilterCondition(options.filter) + ")"
+                            : "");
+
+                // Apply additional conditional fields again for data query
+                sqlQuery = ApplyConditions(sqlQuery, conditionalFields, conditionalValues, false);
+
+                sqlQuery += @"
+            ) AS a
+            WHERE rowindex > @skip AND (@take = 0 OR rowindex <= @take)
+        ";
+                data = KendoGrid<QuestionHeaderVM>.GetTransactionalQuestionGridData_CMD(options, sqlQuery, "Q.Id", conditionalFields, conditionalValues);
+
+                result.Status = "Success";
+                result.Message = "Data retrieved successfully.";
+                result.DataVM = data;
+            }
+            catch (Exception ex)
+            {
+                result.Status = "Fail";
+                result.Message = ex.Message;
+                result.ExMessage = ex.StackTrace;
+            }
+            finally
+            {
+                if (isNewConnection && conn != null)
+                    conn.Close();
+            }
+
+            return result;
+        }
+
+
 
 
 

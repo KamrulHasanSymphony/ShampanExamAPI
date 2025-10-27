@@ -17,8 +17,8 @@ namespace ShampanTailor.Service.Question
         public async Task<ResultVM> Insert(QuestionHeaderVM questionHeader)
         {
             QuestionHeaderRepository _repo = new QuestionHeaderRepository();
-            QuestionOptionDetailRepository optionDetailsRepository = new QuestionOptionDetailRepository();
-            QuestionShortDetailRepository shortDetailsRepository = new QuestionShortDetailRepository();
+            QuestionOptionDetailRepository optionquestionSetDetailListRepository = new QuestionOptionDetailRepository();
+            QuestionShortDetailRepository shortquestionSetDetailListRepository = new QuestionShortDetailRepository();
             _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
@@ -33,13 +33,13 @@ namespace ShampanTailor.Service.Question
                 isNewConnection = true;
                 transaction = conn.BeginTransaction();
 
-                if (questionHeader.QuestionOptionDetails == null || !questionHeader.QuestionOptionDetails.Any())
+                if (questionHeader.QuestionOptionquestionSetDetailList == null || !questionHeader.QuestionOptionquestionSetDetailList.Any())
                 {
-                    throw new Exception("Question Option Details must have at least one detail!");
+                    throw new Exception("Question Option questionSetDetailList must have at least one detail!");
                 }
-                if (questionHeader.QuestionShortDetails == null || !questionHeader.QuestionShortDetails.Any())
+                if (questionHeader.QuestionShortquestionSetDetailList == null || !questionHeader.QuestionShortquestionSetDetailList.Any())
                 {
-                    throw new Exception("Question Short Details must have at least one detail!");
+                    throw new Exception("Question Short questionSetDetailList must have at least one detail!");
                 }
 
                 #region Check Exist Data
@@ -60,13 +60,13 @@ namespace ShampanTailor.Service.Question
 
                 if (result.Status.ToLower() == "success")
                 {
-                    // Insert Question Option Details
+                    // Insert Question Option questionSetDetailList
                     int LineNo = 1;
-                    foreach (var optionDetail in questionHeader.QuestionOptionDetails)
+                    foreach (var optionDetail in questionHeader.QuestionOptionquestionSetDetailList)
                     {
                         optionDetail.QuestionHeaderId = questionHeader.Id;
 
-                        var resultOption = await optionDetailsRepository.Insert(optionDetail, conn, transaction);
+                        var resultOption = await optionquestionSetDetailListRepository.Insert(optionDetail, conn, transaction);
                         if (resultOption.Status.ToLower() != "success")
                         {
                             throw new Exception(resultOption.Message);
@@ -75,12 +75,12 @@ namespace ShampanTailor.Service.Question
                         LineNo++;
                     }
 
-                    // Insert Question Short Details
-                    foreach (var shortDetail in questionHeader.QuestionShortDetails)
+                    // Insert Question Short questionSetDetailList
+                    foreach (var shortDetail in questionHeader.QuestionShortquestionSetDetailList)
                     {
                         shortDetail.QuestionHeaderId = questionHeader.Id;
 
-                        var resultShortDetail = await shortDetailsRepository.Insert(shortDetail, conn, transaction);
+                        var resultShortDetail = await shortquestionSetDetailListRepository.Insert(shortDetail, conn, transaction);
                         if (resultShortDetail.Status.ToLower() != "success")
                         {
                             throw new Exception(resultShortDetail.Message);
@@ -116,8 +116,8 @@ namespace ShampanTailor.Service.Question
         public async Task<ResultVM> Update(QuestionHeaderVM questionHeader)
         {
             QuestionHeaderRepository _repo = new QuestionHeaderRepository();
-            QuestionOptionDetailRepository optionDetailsRepository = new QuestionOptionDetailRepository();
-            QuestionShortDetailRepository shortDetailsRepository = new QuestionShortDetailRepository();
+            QuestionOptionDetailRepository optionquestionSetDetailListRepository = new QuestionOptionDetailRepository();
+            QuestionShortDetailRepository shortquestionSetDetailListRepository = new QuestionShortDetailRepository();
             _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
@@ -132,33 +132,33 @@ namespace ShampanTailor.Service.Question
                 isNewConnection = true;
                 transaction = conn.BeginTransaction();
 
-                if (questionHeader.QuestionOptionDetails == null || !questionHeader.QuestionOptionDetails.Any())
+                if (questionHeader.QuestionOptionquestionSetDetailList == null || !questionHeader.QuestionOptionquestionSetDetailList.Any())
                 {
-                    throw new Exception("Question Option Details must have at least one detail!");
+                    throw new Exception("Question Option questionSetDetailList must have at least one detail!");
                 }
-                if (questionHeader.QuestionShortDetails == null || !questionHeader.QuestionShortDetails.Any())
+                if (questionHeader.QuestionShortquestionSetDetailList == null || !questionHeader.QuestionShortquestionSetDetailList.Any())
                 {
-                    throw new Exception("Question Short Details must have at least one detail!");
+                    throw new Exception("Question Short questionSetDetailList must have at least one detail!");
                 }
 
-                // Delete existing details
-                var optionDeleteResult = _commonRepo.DetailsDelete("QuestionOptionDetails", new[] { "QuestionHeaderId" }, new[] { questionHeader.Id.ToString() }, conn, transaction);
-                if (optionDeleteResult.Status == "Fail") throw new Exception("Error in Delete for Question Option Details.");
+                // Delete existing questionSetDetailList
+                var optionDeleteResult = _commonRepo.questionSetDetailListDelete("QuestionOptionquestionSetDetailList", new[] { "QuestionHeaderId" }, new[] { questionHeader.Id.ToString() }, conn, transaction);
+                if (optionDeleteResult.Status == "Fail") throw new Exception("Error in Delete for Question Option questionSetDetailList.");
 
-                var shortDeleteResult = _commonRepo.DetailsDelete("QuestionShortDetails", new[] { "QuestionHeaderId" }, new[] { questionHeader.Id.ToString() }, conn, transaction);
-                if (shortDeleteResult.Status == "Fail") throw new Exception("Error in Delete for Question Short Details.");
+                var shortDeleteResult = _commonRepo.questionSetDetailListDelete("QuestionShortquestionSetDetailList", new[] { "QuestionHeaderId" }, new[] { questionHeader.Id.ToString() }, conn, transaction);
+                if (shortDeleteResult.Status == "Fail") throw new Exception("Error in Delete for Question Short questionSetDetailList.");
 
                 result = await _repo.Update(questionHeader, conn, transaction);
 
                 if (result.Status.ToLower() == "success")
                 {
-                    // Insert new Question Option Details
+                    // Insert new Question Option questionSetDetailList
                     int LineNo = 1;
-                    foreach (var optionDetail in questionHeader.QuestionOptionDetails)
+                    foreach (var optionDetail in questionHeader.QuestionOptionquestionSetDetailList)
                     {
                         optionDetail.QuestionHeaderId = questionHeader.Id;
 
-                        var resultOption = await optionDetailsRepository.Insert(optionDetail, conn, transaction);
+                        var resultOption = await optionquestionSetDetailListRepository.Insert(optionDetail, conn, transaction);
                         if (resultOption.Status.ToLower() != "success")
                         {
                             throw new Exception(resultOption.Message);
@@ -167,12 +167,12 @@ namespace ShampanTailor.Service.Question
                         LineNo++;
                     }
 
-                    // Insert new Question Short Details
-                    foreach (var shortDetail in questionHeader.QuestionShortDetails)
+                    // Insert new Question Short questionSetDetailList
+                    foreach (var shortDetail in questionHeader.QuestionShortquestionSetDetailList)
                     {
                         shortDetail.QuestionHeaderId = questionHeader.Id;
 
-                        var resultShortDetail = await shortDetailsRepository.Insert(shortDetail, conn, transaction);
+                        var resultShortDetail = await shortquestionSetDetailListRepository.Insert(shortDetail, conn, transaction);
                         if (resultShortDetail.Status.ToLower() != "success")
                         {
                             throw new Exception(resultShortDetail.Message);

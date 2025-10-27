@@ -156,15 +156,15 @@ namespace ShampanExam.Repository.Question
                 }).ToList();
 
                 GradeDetailRepository gradeDetail = new GradeDetailRepository();
-                // ✅ Load Measurement Details
-                var detailsDataList = gradeDetail.List(new[] { "M.GradeId" }, conditionalValues, vm, conn, transaction);
-                if (detailsDataList.Status == "Success" && detailsDataList.DataVM is DataTable ddt)
+                // ✅ Load Measurement questionSetDetailList
+                var questionSetDetailListDataList = gradeDetail.List(new[] { "M.GradeId" }, conditionalValues, vm, conn, transaction);
+                if (questionSetDetailListDataList.Status == "Success" && questionSetDetailListDataList.DataVM is DataTable ddt)
                 {
                     string json = JsonConvert.SerializeObject(ddt);
-                    var details = JsonConvert.DeserializeObject<List<GradeDetailVM>>(json);
+                    var questionSetDetailList = JsonConvert.DeserializeObject<List<GradeDetailVM>>(json);
 
                     if (list.Any())
-                        list.FirstOrDefault().gradeDetailList = details;
+                        list.FirstOrDefault().gradeDetailList = questionSetDetailList;
                 }
 
                 result.Status = "Success";

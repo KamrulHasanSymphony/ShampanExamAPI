@@ -16,7 +16,7 @@ namespace ShampanExam.Service.Question
         public async Task<ResultVM> Insert(QuestionSetHeaderVM questionSetHeader)
         {
             QuestionSetHeaderRepository _repo = new QuestionSetHeaderRepository();
-            QuestionSetDetailRepository questionSetDetailsRepository = new QuestionSetDetailRepository();
+            QuestionSetDetailRepository questionSetquestionSetDetailListRepository = new QuestionSetDetailRepository();
             _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
@@ -33,7 +33,7 @@ namespace ShampanExam.Service.Question
 
                 if (questionSetHeader.questionSetDetailList == null || !questionSetHeader.questionSetDetailList.Any())
                 {
-                    throw new Exception("QuestionSetDetails must have at least one detail!");
+                    throw new Exception("QuestionSetquestionSetDetailList must have at least one detail!");
                 }
 
                 #region Check Exist Data
@@ -64,7 +64,7 @@ namespace ShampanExam.Service.Question
                     {
                         questionSetDetail.QuestionSetHeaderId = questionSetHeader.Id;
 
-                        var resultDetail = await questionSetDetailsRepository.Insert(questionSetDetail, conn, transaction);
+                        var resultDetail = await questionSetquestionSetDetailListRepository.Insert(questionSetDetail, conn, transaction);
                         if (resultDetail.Status.ToLower() != "success")
                         {
                             throw new Exception(resultDetail.Message);
@@ -106,7 +106,7 @@ namespace ShampanExam.Service.Question
         public async Task<ResultVM> Update(QuestionSetHeaderVM questionSetHeader)
         {
             QuestionSetHeaderRepository _repo = new QuestionSetHeaderRepository();
-            QuestionSetDetailRepository questionSetDetailsRepository = new QuestionSetDetailRepository();
+            QuestionSetDetailRepository questionSetquestionSetDetailListRepository = new QuestionSetDetailRepository();
             _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
@@ -123,13 +123,13 @@ namespace ShampanExam.Service.Question
 
                 if (questionSetHeader.questionSetDetailList == null || !questionSetHeader.questionSetDetailList.Any())
                 {
-                    throw new Exception("QuestionSetDetails must have at least one detail!");
+                    throw new Exception("QuestionSetquestionSetDetailList must have at least one detail!");
                 }
 
-                var record = _commonRepo.DetailsDelete("QuestionSetDetails", new[] { "QuestionSetHeaderId" }, new[] { questionSetHeader.Id.ToString() }, conn, transaction);
+                var record = _commonRepo.questionSetDetailListDelete("QuestionSetquestionSetDetailList", new[] { "QuestionSetHeaderId" }, new[] { questionSetHeader.Id.ToString() }, conn, transaction);
                 if (record.Status == "Fail")
                 {
-                    throw new Exception("Error in Delete for QuestionSetDetails Data.");
+                    throw new Exception("Error in Delete for QuestionSetquestionSetDetailList Data.");
                 }
 
                 result = await _repo.Update(questionSetHeader, conn, transaction);
@@ -140,7 +140,7 @@ namespace ShampanExam.Service.Question
                     {
                         questionSetDetail.QuestionSetHeaderId = questionSetHeader.Id;
 
-                        var resultDetail = await questionSetDetailsRepository.Insert(questionSetDetail, conn, transaction);
+                        var resultDetail = await questionSetquestionSetDetailListRepository.Insert(questionSetDetail, conn, transaction);
                         if (resultDetail.Status.ToLower() != "success")
                             throw new Exception(resultDetail.Message);
                     }
@@ -335,5 +335,7 @@ namespace ShampanExam.Service.Question
                 if (isNewConnection && conn != null) conn.Close();
             }
         }
+
+
     }
 }

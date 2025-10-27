@@ -20,7 +20,7 @@ namespace ShampanExam.Repository.Question
                 if (transaction == null) transaction = conn.BeginTransaction();
 
                 string query = @"
-                INSERT INTO GradeDetails
+                INSERT INTO GradequestionSetDetailList
                 (
                     GradeId, Grade, MinPercentage, MaxPercentage, GradePoint, GradePointNote
                 )
@@ -75,7 +75,7 @@ namespace ShampanExam.Repository.Question
                     ISNULL(M.MaxPercentage,0) AS MaxPercentage,
                     ISNULL(M.GradePoint,0) AS GradePoint,
                     ISNULL(M.GradePointNote,'') AS GradePointNote
-                FROM GradeDetails M
+                FROM GradequestionSetDetailList M
                 WHERE 1=1";
 
                 if (vm != null && !string.IsNullOrEmpty(vm.Id))
@@ -96,7 +96,7 @@ namespace ShampanExam.Repository.Question
                 objComm.Fill(dataTable);
 
                 result.Status = "Success";
-                result.Message = "Details Data retrieved successfully.";
+                result.Message = "questionSetDetailList Data retrieved successfully.";
                 result.DataVM = dataTable;
 
                 return result;

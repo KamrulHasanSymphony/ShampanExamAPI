@@ -27,11 +27,11 @@ namespace ShampanExam.ViewModel.SetUpVMs
         [Display(Name = "Remarks")]
         public string? Remarks { get; set; }
 
-        public List<FiscalYearDetailVM> fiscalYearDetails { get; set; }
+        public List<FiscalYearDetailVM> fiscalYearquestionSetDetailList { get; set; }
 
         public FiscalYearVM()
         {
-            fiscalYearDetails = new List<FiscalYearDetailVM>();
+            fiscalYearquestionSetDetailList = new List<FiscalYearDetailVM>();
         }
 
     }

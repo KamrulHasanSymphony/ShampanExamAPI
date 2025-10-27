@@ -71,7 +71,7 @@ namespace ShampanExam.Service.SetUp
                     transaction.Rollback();
                 }
 
-                // Capture exception details in the result
+                // Capture exception questionSetDetailList in the result
                 result.ExMessage = ex.ToString();
                 result.Message = "Error in inserting fiscal year.";
                 return result;

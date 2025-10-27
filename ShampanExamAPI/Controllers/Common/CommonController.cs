@@ -3,6 +3,7 @@ using ShampanExam.Service.Common;
 using ShampanExam.Service.Question;
 using ShampanExam.ViewModel.CommonVMs;
 using ShampanExam.ViewModel.ExtensionMethods;
+using ShampanExam.ViewModel.QuestionVM;
 using ShampanExam.ViewModel.SetUpVMs;
 using System.Data;
 
@@ -179,6 +180,37 @@ namespace ShampanExamAPI.Controllers.Common
             }
         }
 
+
+        //POST: api/Common/GetAllQuestionsByChapter
+        [HttpPost("GetAllQuestionsByChapter")]
+        public async Task<ResultVM> GetAllQuestionsByChapter([FromBody] questionRequest request)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+            CommonService _commonService = new CommonService();
+
+            try
+            {
+                var options = request.Options;
+                var chapterId = request.ChapterID;
+
+                // Pass parameters to GetFromShadeGridData method
+                resultVM = await _commonService.GetAllQuestionsByChapter(
+                    options, new[] { "" }, new[] { "" }, chapterId
+                );
+
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.Message,
+                    DataVM = null
+                };
+            }
+        }
 
 
     }

@@ -40,14 +40,14 @@
 
 
         public static string MasterInsertFailed { get; set; } = "Master Insert Failed";
-        public static string DetailInsertFailed { get; set; } = "Details Insert Failed";
+        public static string DetailInsertFailed { get; set; } = "questionSetDetailList Insert Failed";
         public static string NotFoundForSave { get; set; } = "Data Not Found for Save";
         public static string NotFoundForUpdate { get; set; } = "Data Not Found for Update";
         public static string DataLoaded { get; set; } = "Data Loaded Successfully";
         public static string FiscalYear { get; set; } = "Please Setup Fiscal Year.";
         public static string DataLoadedFailed { get; set; } = "Data Not Found!";
         public static string BatchCreateFailed { get; set; } = "Batch Creation Failed!";
-        public static string DetailsNotFoundForSave { get; set; } = " Details Data Not Found for Save";
+        public static string questionSetDetailListNotFoundForSave { get; set; } = " questionSetDetailList Data Not Found for Save";
 
         public static string AlreadyExists { get; set; } = "Already Exists";
 

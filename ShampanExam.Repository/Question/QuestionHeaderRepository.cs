@@ -193,28 +193,28 @@ namespace ShampanTailor.Repository.Question
                     });
                 }
 
-                // ✅ Load Question Option Details
-                QuestionOptionDetailRepository optionDetailsRepository = new QuestionOptionDetailRepository();
-                var optionDetailsDataList = optionDetailsRepository.List(new[] { "M.QuestionHeaderId" }, conditionalValues, vm, conn, transaction);
-                if (optionDetailsDataList.Status == "Success" && optionDetailsDataList.DataVM is DataTable dt)
+                // ✅ Load Question Option questionSetDetailList
+                QuestionOptionDetailRepository optionquestionSetDetailListRepository = new QuestionOptionDetailRepository();
+                var optionquestionSetDetailListDataList = optionquestionSetDetailListRepository.List(new[] { "M.QuestionHeaderId" }, conditionalValues, vm, conn, transaction);
+                if (optionquestionSetDetailListDataList.Status == "Success" && optionquestionSetDetailListDataList.DataVM is DataTable dt)
                 {
                     string json = JsonConvert.SerializeObject(dt);
-                    var optionDetails = JsonConvert.DeserializeObject<List<QuestionOptionDetailVM>>(json);
+                    var optionquestionSetDetailList = JsonConvert.DeserializeObject<List<QuestionOptionDetailVM>>(json);
 
                     if (model.Any())
-                        model.FirstOrDefault().QuestionOptionDetails = optionDetails;
+                        model.FirstOrDefault().QuestionOptionquestionSetDetailList = optionquestionSetDetailList;
                 }
 
-                // ✅ Load Question Short Details
-                QuestionShortDetailRepository shortDetailsRepository = new QuestionShortDetailRepository();
-                var shortDetailsDataList = shortDetailsRepository.List(new[] { "M.QuestionHeaderId" }, conditionalValues, vm, conn, transaction);
-                if (shortDetailsDataList.Status == "Success" && shortDetailsDataList.DataVM is DataTable dt2)
+                // ✅ Load Question Short questionSetDetailList
+                QuestionShortDetailRepository shortquestionSetDetailListRepository = new QuestionShortDetailRepository();
+                var shortquestionSetDetailListDataList = shortquestionSetDetailListRepository.List(new[] { "M.QuestionHeaderId" }, conditionalValues, vm, conn, transaction);
+                if (shortquestionSetDetailListDataList.Status == "Success" && shortquestionSetDetailListDataList.DataVM is DataTable dt2)
                 {
                     string json = JsonConvert.SerializeObject(dt2);
-                    var shortDetails = JsonConvert.DeserializeObject<List<QuestionShortDetailVM>>(json);
+                    var shortquestionSetDetailList = JsonConvert.DeserializeObject<List<QuestionShortDetailVM>>(json);
 
                     if (model.Any())
-                        model.FirstOrDefault().QuestionShortDetails = shortDetails;
+                        model.FirstOrDefault().QuestionShortquestionSetDetailList = shortquestionSetDetailList;
                 }
 
                 result.Status = "Success";
