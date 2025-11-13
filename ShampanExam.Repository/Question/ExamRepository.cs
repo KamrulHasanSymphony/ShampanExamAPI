@@ -343,8 +343,8 @@ namespace ShampanExam.Repository.Question
 
                 string sqlQuery = @"
             SELECT * FROM ExamQuestionHeaders WHERE ExamId = @ExamId;
-            SELECT * FROM ExamQuestionOptionquestionSetDetailList WHERE ExamId = @ExamId;
-            SELECT * FROM ExamQuestionShortquestionSetDetailList WHERE ExamId = @ExamId;
+            SELECT * FROM ExamQuestionOptionDetails WHERE ExamId = @ExamId;
+            SELECT * FROM ExamQuestionShortDetails WHERE ExamId = @ExamId;
             SELECT * FROM ExamExaminees WHERE ExamId = @ExamId;
         ";
 
@@ -377,7 +377,7 @@ namespace ShampanExam.Repository.Question
                     }).ToList();
                 }
 
-                // --- Table 2: ExamQuestionOptionquestionSetDetailList
+                // --- Table 2: ExamQuestionOptionDetails
                 if (ds.Tables.Count > 1 && ds.Tables[1].Rows.Count > 0)
                 {
                     examVm.examQuestionOptionDetailList = ds.Tables[1].AsEnumerable().Select(r => new ExamQuestionOptionDetailVM
@@ -393,7 +393,7 @@ namespace ShampanExam.Repository.Question
                     }).ToList();
                 }
 
-                // --- Table 3: ExamQuestionShortquestionSetDetailList
+                // --- Table 3: ExamQuestionShortDetails
                 if (ds.Tables.Count > 2 && ds.Tables[2].Rows.Count > 0)
                 {
                     examVm.examQuestionShortDetailList = ds.Tables[2].AsEnumerable().Select(r => new ExamQuestionShortDetailVM

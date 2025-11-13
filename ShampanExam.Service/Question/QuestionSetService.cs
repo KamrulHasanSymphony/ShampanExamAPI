@@ -128,7 +128,7 @@ namespace ShampanExam.Service.Question
                     throw new Exception("QuestionSetDetails must have at least one detail!");
                 }
 
-                var record = _commonRepo.questionSetDetailListDelete("QuestionSetDetails", new[] { "QuestionSetHeaderId" }, new[] { questionSetHeader.Id.ToString() }, conn, transaction);
+                var record = _commonRepo.DetailsDelete("QuestionSetDetails", new[] { "QuestionSetHeaderId" }, new[] { questionSetHeader.Id.ToString() }, conn, transaction);
                 if (record.Status == "Fail")
                 {
                     throw new Exception("Error in Delete for QuestionSetDetails Data.");
@@ -258,7 +258,7 @@ namespace ShampanExam.Service.Question
         //        #endregion
 
         //        // Delete existing questionSetDetailList first
-        //        var delRes = _commonRepo.questionSetDetailListDelete("QuestionSetDetails", new[] { "QuestionSetHeaderId" }, new[] { vm.Id.ToString() }, conn, transaction);
+        //        var delRes = _commonRepo.DetailsDelete("QuestionSetDetails", new[] { "QuestionSetHeaderId" }, new[] { vm.Id.ToString() }, conn, transaction);
         //        if (delRes.Status == "Fail")
         //            throw new Exception("Error deleting old questionSetDetailList.");
 

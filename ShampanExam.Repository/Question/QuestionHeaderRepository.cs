@@ -204,7 +204,7 @@ namespace ShampanTailor.Repository.Question
                     var optionquestionSetDetailList = JsonConvert.DeserializeObject<List<QuestionOptionDetailVM>>(json);
 
                     if (model.Any())
-                        model.FirstOrDefault().QuestionOptionquestionSetDetailList = optionquestionSetDetailList;
+                        model.FirstOrDefault().QuestionOptionDetails = optionquestionSetDetailList;
                 }
 
                 // ✅ Load Question Short questionSetDetailList
@@ -216,7 +216,7 @@ namespace ShampanTailor.Repository.Question
                     var shortquestionSetDetailList = JsonConvert.DeserializeObject<List<QuestionShortDetailVM>>(json);
 
                     if (model.Any())
-                        model.FirstOrDefault().QuestionShortquestionSetDetailList = shortquestionSetDetailList;
+                        model.FirstOrDefault().QuestionShortDetails = shortquestionSetDetailList;
                 }
 
                 result.Status = "Success";

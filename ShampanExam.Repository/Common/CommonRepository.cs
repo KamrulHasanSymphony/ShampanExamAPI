@@ -801,7 +801,7 @@ order by LastId Desc ";
             }
         }
 
-        public ResultVM questionSetDetailListDelete(string tableName, string[] conditionalFields, string[] conditionalValue, SqlConnection conn = null, SqlTransaction transaction = null)
+        public ResultVM DetailsDelete(string tableName, string[] conditionalFields, string[] conditionalValue, SqlConnection conn = null, SqlTransaction transaction = null)
         {
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
             try

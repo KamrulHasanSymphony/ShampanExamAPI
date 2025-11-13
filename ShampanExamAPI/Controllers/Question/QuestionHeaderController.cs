@@ -6,7 +6,7 @@ using ShampanExam.ViewModel.KendoCommon;
 using ShampanTailor.Service.Question;
 using ShampanTailor.ViewModel.QuestionVM;
 
-namespace ShampanExamAPI.Controllers.Question
+namespace ShampanTailorAPI.Controllers.Question
 {
     [Route("api/[controller]")]
     [ApiController]

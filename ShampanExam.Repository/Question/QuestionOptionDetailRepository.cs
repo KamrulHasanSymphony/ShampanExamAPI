@@ -18,7 +18,7 @@ namespace ShampanTailor.Repository.Question
                 if (transaction == null) transaction = conn.BeginTransaction();
 
                 string query = @"
-                INSERT INTO QuestionOptionquestionSetDetailList
+                INSERT INTO QuestionOptionDetails
                 (
                     QuestionHeaderId, QuestionOption, QuestionAnswer
                 )
@@ -67,7 +67,7 @@ namespace ShampanTailor.Repository.Question
                     ISNULL(M.QuestionHeaderId,0) AS QuestionHeaderId,
                     ISNULL(M.QuestionOption,'') AS QuestionOption,
                     ISNULL(M.QuestionAnswer,'') AS QuestionAnswer
-                FROM QuestionOptionquestionSetDetailList M
+                FROM QuestionOptionDetails M
                 WHERE 1=1 ";
 
                 query = ApplyConditions(query, conditionalFields, conditionalValues, false);
@@ -77,7 +77,7 @@ namespace ShampanTailor.Repository.Question
                 objComm.Fill(dataTable);
 
                 result.Status = "Success";
-                result.Message = "QuestionOptionquestionSetDetailList data retrieved successfully.";
+                result.Message = "QuestionOptionDetails data retrieved successfully.";
                 result.DataVM = dataTable;
 
                 return result;

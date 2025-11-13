@@ -19,7 +19,7 @@ namespace ShampanTailor.Repository.Question
                 if (transaction == null) transaction = conn.BeginTransaction();
 
                 string query = @"
-                INSERT INTO QuestionShortquestionSetDetailList
+                INSERT INTO QuestionShortDetails
                 (
                     QuestionHeaderId, QuestionAnswer
                 )
@@ -66,7 +66,7 @@ namespace ShampanTailor.Repository.Question
                     ISNULL(M.Id,0) AS Id,
                     ISNULL(M.QuestionHeaderId,0) AS QuestionHeaderId,
                     ISNULL(M.QuestionAnswer,'') AS QuestionAnswer
-                FROM QuestionShortquestionSetDetailList M
+                FROM QuestionShortDetails M
                 WHERE 1=1";
 
                 query = ApplyConditions(query, conditionalFields, conditionalValues, false);
