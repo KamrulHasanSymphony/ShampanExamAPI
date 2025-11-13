@@ -33,13 +33,10 @@ namespace ShampanTailor.Service.Question
                 isNewConnection = true;
                 transaction = conn.BeginTransaction();
 
-                if (questionHeader.QuestionOptionquestionSetDetailList == null || !questionHeader.QuestionOptionquestionSetDetailList.Any())
+                if ((questionHeader.QuestionOptionDetails == null || !questionHeader.QuestionOptionDetails.Any())
+                 && (questionHeader.QuestionShortDetails == null || !questionHeader.QuestionShortDetails.Any()))
                 {
-                    throw new Exception("Question Option questionSetDetailList must have at least one detail!");
-                }
-                if (questionHeader.QuestionShortquestionSetDetailList == null || !questionHeader.QuestionShortquestionSetDetailList.Any())
-                {
-                    throw new Exception("Question Short questionSetDetailList must have at least one detail!");
+                    throw new Exception("Question must have at least one detail (Option or Short)!");
                 }
 
                 #region Check Exist Data
@@ -62,7 +59,7 @@ namespace ShampanTailor.Service.Question
                 {
                     // Insert Question Option questionSetDetailList
                     int LineNo = 1;
-                    foreach (var optionDetail in questionHeader.QuestionOptionquestionSetDetailList)
+                    foreach (var optionDetail in questionHeader.QuestionOptionDetails)
                     {
                         optionDetail.QuestionHeaderId = questionHeader.Id;
 
@@ -76,7 +73,7 @@ namespace ShampanTailor.Service.Question
                     }
 
                     // Insert Question Short questionSetDetailList
-                    foreach (var shortDetail in questionHeader.QuestionShortquestionSetDetailList)
+                    foreach (var shortDetail in questionHeader.QuestionShortDetails)
                     {
                         shortDetail.QuestionHeaderId = questionHeader.Id;
 
@@ -132,20 +129,17 @@ namespace ShampanTailor.Service.Question
                 isNewConnection = true;
                 transaction = conn.BeginTransaction();
 
-                if (questionHeader.QuestionOptionquestionSetDetailList == null || !questionHeader.QuestionOptionquestionSetDetailList.Any())
+                if ((questionHeader.QuestionOptionDetails == null || !questionHeader.QuestionOptionDetails.Any())
+                 && (questionHeader.QuestionShortDetails == null || !questionHeader.QuestionShortDetails.Any()))
                 {
-                    throw new Exception("Question Option questionSetDetailList must have at least one detail!");
-                }
-                if (questionHeader.QuestionShortquestionSetDetailList == null || !questionHeader.QuestionShortquestionSetDetailList.Any())
-                {
-                    throw new Exception("Question Short questionSetDetailList must have at least one detail!");
+                    throw new Exception("Question must have at least one detail (Option or Short)!");
                 }
 
                 // Delete existing questionSetDetailList
-                var optionDeleteResult = _commonRepo.questionSetDetailListDelete("QuestionOptionquestionSetDetailList", new[] { "QuestionHeaderId" }, new[] { questionHeader.Id.ToString() }, conn, transaction);
+                var optionDeleteResult = _commonRepo.DetailsDelete("QuestionOptionDetails", new[] { "QuestionHeaderId" }, new[] { questionHeader.Id.ToString() }, conn, transaction);
                 if (optionDeleteResult.Status == "Fail") throw new Exception("Error in Delete for Question Option questionSetDetailList.");
 
-                var shortDeleteResult = _commonRepo.questionSetDetailListDelete("QuestionShortquestionSetDetailList", new[] { "QuestionHeaderId" }, new[] { questionHeader.Id.ToString() }, conn, transaction);
+                var shortDeleteResult = _commonRepo.DetailsDelete("QuestionShortDetails", new[] { "QuestionHeaderId" }, new[] { questionHeader.Id.ToString() }, conn, transaction);
                 if (shortDeleteResult.Status == "Fail") throw new Exception("Error in Delete for Question Short questionSetDetailList.");
 
                 result = await _repo.Update(questionHeader, conn, transaction);
@@ -154,7 +148,7 @@ namespace ShampanTailor.Service.Question
                 {
                     // Insert new Question Option questionSetDetailList
                     int LineNo = 1;
-                    foreach (var optionDetail in questionHeader.QuestionOptionquestionSetDetailList)
+                    foreach (var optionDetail in questionHeader.QuestionOptionDetails)
                     {
                         optionDetail.QuestionHeaderId = questionHeader.Id;
 
@@ -168,7 +162,7 @@ namespace ShampanTailor.Service.Question
                     }
 
                     // Insert new Question Short questionSetDetailList
-                    foreach (var shortDetail in questionHeader.QuestionShortquestionSetDetailList)
+                    foreach (var shortDetail in questionHeader.QuestionShortDetails)
                     {
                         shortDetail.QuestionHeaderId = questionHeader.Id;
 

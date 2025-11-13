@@ -126,7 +126,7 @@ namespace ShampanExam.Service.Question
                     throw new Exception("QuestionSetquestionSetDetailList must have at least one detail!");
                 }
 
-                var record = _commonRepo.questionSetDetailListDelete("QuestionSetquestionSetDetailList", new[] { "QuestionSetHeaderId" }, new[] { questionSetHeader.Id.ToString() }, conn, transaction);
+                var record = _commonRepo.DetailsDelete("QuestionSetquestionSetDetailList", new[] { "QuestionSetHeaderId" }, new[] { questionSetHeader.Id.ToString() }, conn, transaction);
                 if (record.Status == "Fail")
                 {
                     throw new Exception("Error in Delete for QuestionSetquestionSetDetailList Data.");

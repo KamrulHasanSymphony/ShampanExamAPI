@@ -58,7 +58,7 @@ namespace ShampanExam.Repository.Exam
                 {
                     var optionQuery = $@"
                 SELECT Id, QuestionHeaderId, QuestionOption, QuestionAnswer
-                FROM QuestionOptionquestionSetDetailList
+                FROM QuestionOptionDetails
                 WHERE QuestionHeaderId IN ({string.Join(",", optionQuestionIds)})";
 
                     var options = new List<QuestionOptionVM>();
@@ -95,7 +95,7 @@ namespace ShampanExam.Repository.Exam
                 {
                     var textQuery = $@"
                 SELECT QuestionHeaderId, QuestionAnswer
-                FROM QuestionShortquestionSetDetailList
+                FROM QuestionShortDetails
                 WHERE QuestionHeaderId IN ({string.Join(",", textQuestionIds)})";
 
                     var textAnswers = new Dictionary<int, string>();
@@ -196,9 +196,9 @@ namespace ShampanExam.Repository.Exam
 //                {
 //                    var optionQuery = $@"
 //               SELECT Id, ExamId,ExamQuestionHeaderId, QuestionHeaderId, QuestionOption, QuestionAnswer
-//FROM ExamQuestionOptionquestionSetDetailList
+//FROM ExamQuestionOptionDetails
 
-//                WHERE ExamQuestionOptionquestionSetDetailList IN ({string.Join(",", optionQuestionIds)})";
+//                WHERE ExamQuestionOptionDetails IN ({string.Join(",", optionQuestionIds)})";
 
 //                    var options = new List<QuestionOptionVM>();
 //                    using (var cmd = new SqlCommand(optionQuery, conn, transaction))
@@ -234,7 +234,7 @@ namespace ShampanExam.Repository.Exam
 //                {
 //                    var textQuery = $@"
 //                SELECT ExamId,ExamQuestionHeaderId,QuestionHeaderId, QuestionAnswer
-//                FROM ExamQuestionShortquestionSetDetailList
+//                FROM ExamQuestionShortDetails
 //                WHERE QuestionHeaderId IN ({string.Join(",", textQuestionIds)})";
 
 //                    var textAnswers = new Dictionary<int, string>();

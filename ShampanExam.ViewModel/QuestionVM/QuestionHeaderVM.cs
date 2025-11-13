@@ -32,13 +32,13 @@ namespace ShampanTailor.ViewModel.QuestionVM
         [Display(Name = "Question Mark")]
         public int? QuestionMark { get; set; }
 
-        public List<QuestionOptionDetailVM> QuestionOptionquestionSetDetailList { get; set; }
-        public List<QuestionShortDetailVM> QuestionShortquestionSetDetailList { get; set; }
+        public List<QuestionOptionDetailVM> QuestionOptionDetails { get; set; }
+        public List<QuestionShortDetailVM> QuestionShortDetails { get; set; }
 
         public QuestionHeaderVM()
         {
-            QuestionOptionquestionSetDetailList = new List<QuestionOptionDetailVM>();
-            QuestionShortquestionSetDetailList = new List<QuestionShortDetailVM>();
+            QuestionOptionDetails = new List<QuestionOptionDetailVM>();
+            QuestionShortDetails = new List<QuestionShortDetailVM>();
         }
     }
 }

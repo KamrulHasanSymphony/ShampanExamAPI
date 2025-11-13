@@ -115,7 +115,7 @@ namespace ShampanExam.Service.Grades
                     throw new Exception("GradequestionSetDetailList must have at least one detail!");
                 }
 
-                var record = _commonRepo.questionSetDetailListDelete("GradequestionSetDetailList", new[] { "GradeId" }, new[] { gradeHeader.Id.ToString() }, conn, transaction);
+                var record = _commonRepo.DetailsDelete("GradequestionSetDetailList", new[] { "GradeId" }, new[] { gradeHeader.Id.ToString() }, conn, transaction);
                 if (record.Status == "Fail")
                 {
                     throw new Exception("Error in Delete for GradequestionSetDetailList Data.");
