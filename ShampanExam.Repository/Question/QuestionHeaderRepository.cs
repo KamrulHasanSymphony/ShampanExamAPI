@@ -47,6 +47,7 @@ namespace ShampanTailor.Repository.Question
                 result.Status = "Success";
                 result.Message = "QuestionHeader inserted successfully.";
                 result.Id = vm.Id.ToString();
+                result.Code = vm.Code.ToString();
                 result.DataVM = vm;
             }
             catch (Exception ex)
@@ -186,6 +187,7 @@ namespace ShampanTailor.Repository.Question
                     model.Add(new QuestionHeaderVM
                     {
                         Id = row.Field<int>("Id"),
+                        Code = row.Field<string>("Code"),
                         QuestionSubjectId = row.Field<int>("QuestionSubjectId"),
                         QuestionChapterId = row.Field<int>("QuestionChapterId"),
                         QuestionCategorieId = row.Field<int>("QuestionCategorieId"),
