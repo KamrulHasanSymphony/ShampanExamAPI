@@ -12,7 +12,6 @@ namespace ShampanTailor.Service.Question
     public class QuestionService
     {
         CommonRepository _commonRepo = new CommonRepository();
-
         // Insert
         public async Task<ResultVM> Insert(QuestionHeaderVM questionHeader)
         {
@@ -21,7 +20,8 @@ namespace ShampanTailor.Service.Question
             QuestionShortDetailRepository shortquestionSetDetailListRepository = new QuestionShortDetailRepository();
             _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
-
+            string CodeGroup = "Question";
+            string CodeName = "Question";
             bool isNewConnection = false;
             SqlConnection conn = null;
             SqlTransaction transaction = null;
@@ -32,16 +32,20 @@ namespace ShampanTailor.Service.Question
                 conn.Open();
                 isNewConnection = true;
                 transaction = conn.BeginTransaction();
-
-                if (questionHeader.QuestionOptionquestionSetDetailList == null || !questionHeader.QuestionOptionquestionSetDetailList.Any())
+                if (questionHeader.QuestionType== "MultiOption"|| questionHeader.QuestionType == "SingleOption")
                 {
-                    throw new Exception("Question Option questionSetDetailList must have at least one detail!");
+                    if (questionHeader.QuestionOptionquestionSetDetailList == null || !questionHeader.QuestionOptionquestionSetDetailList.Any())
+                    {
+                        throw new Exception("Question Option questionSetDetailList must have at least one detail!");
+                    }
                 }
-                if (questionHeader.QuestionShortquestionSetDetailList == null || !questionHeader.QuestionShortquestionSetDetailList.Any())
+                if (questionHeader.QuestionType == "MultiLine" || questionHeader.QuestionType == "SingleLine")
                 {
-                    throw new Exception("Question Short questionSetDetailList must have at least one detail!");
+                    if (questionHeader.QuestionShortquestionSetDetailList == null || !questionHeader.QuestionShortquestionSetDetailList.Any())
+                    {
+                        throw new Exception("Question Short questionSetDetailList must have at least one detail!");
+                    }
                 }
-
                 #region Check Exist Data
                 string[] conditionField = { "QuestionText" };
                 string[] conditionValue = { questionHeader.QuestionText.Trim() };
@@ -54,51 +58,63 @@ namespace ShampanTailor.Service.Question
                     throw new Exception("Data Already Exist!");
                 }
                 #endregion
+                string code = _commonRepo.CodeGenerationNo(CodeGroup, CodeName, conn, transaction);
 
-                result = await _repo.Insert(questionHeader, conn, transaction);
-                questionHeader.Id = Convert.ToInt32(result.Id);
 
-                if (result.Status.ToLower() == "success")
+                if (!string.IsNullOrEmpty(code))
                 {
-                    // Insert Question Option questionSetDetailList
-                    int LineNo = 1;
-                    foreach (var optionDetail in questionHeader.QuestionOptionquestionSetDetailList)
-                    {
-                        optionDetail.QuestionHeaderId = questionHeader.Id;
+                    questionHeader.Code = code;
 
-                        var resultOption = await optionquestionSetDetailListRepository.Insert(optionDetail, conn, transaction);
-                        if (resultOption.Status.ToLower() != "success")
+                    result = await _repo.Insert(questionHeader, conn, transaction);
+                    questionHeader.Id = Convert.ToInt32(result.Id);
+
+                    if (result.Status.ToLower() == "success")
+                    {
+                        // Insert Question Option questionSetDetailList
+                        int LineNo = 1;
+                        foreach (var optionDetail in questionHeader.QuestionOptionquestionSetDetailList)
                         {
-                            throw new Exception(resultOption.Message);
+                            optionDetail.QuestionHeaderId = questionHeader.Id;
+
+                            var resultOption = await optionquestionSetDetailListRepository.Insert(optionDetail, conn, transaction);
+                            if (resultOption.Status.ToLower() != "success")
+                            {
+                                throw new Exception(resultOption.Message);
+                            }
+
+                            LineNo++;
                         }
 
-                        LineNo++;
-                    }
-
-                    // Insert Question Short questionSetDetailList
-                    foreach (var shortDetail in questionHeader.QuestionShortquestionSetDetailList)
-                    {
-                        shortDetail.QuestionHeaderId = questionHeader.Id;
-
-                        var resultShortDetail = await shortquestionSetDetailListRepository.Insert(shortDetail, conn, transaction);
-                        if (resultShortDetail.Status.ToLower() != "success")
+                        // Insert Question Short questionSetDetailList
+                        foreach (var shortDetail in questionHeader.QuestionShortquestionSetDetailList)
                         {
-                            throw new Exception(resultShortDetail.Message);
+                            shortDetail.QuestionHeaderId = questionHeader.Id;
+
+                            var resultShortDetail = await shortquestionSetDetailListRepository.Insert(shortDetail, conn, transaction);
+                            if (resultShortDetail.Status.ToLower() != "success")
+                            {
+                                throw new Exception(resultShortDetail.Message);
+                            }
                         }
                     }
-                }
 
-                if (isNewConnection && result.Status == "Success")
-                {
-                    transaction.Commit();
+                    if (isNewConnection && result.Status == "Success")
+                    {
+                        transaction.Commit();
+                    }
+                    else
+                    {
+                        throw new Exception(result.Message);
+                    }
+
+                    return result;
                 }
                 else
                 {
-                    throw new Exception(result.Message);
+                    throw new Exception("Code Generation Failed!");
                 }
-
-                return result;
             }
+
             catch (Exception ex)
             {
                 if (transaction != null && isNewConnection) transaction.Rollback();
