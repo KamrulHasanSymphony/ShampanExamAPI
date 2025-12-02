@@ -12,6 +12,7 @@ namespace ShampanExam.ViewModel.AccountVMs
         public DateTime? LockoutEnd { get; set; }
         public string NormalizedEmail { get; set; }
         public bool IsHeadOffice { get; set; }
+        public int? UserId { get; set; }
 
         [StringLength(256)]
         public string NormalizedPassword { get; set; }

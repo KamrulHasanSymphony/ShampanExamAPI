@@ -13,7 +13,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ShampanExam.Repository.Exam
 {
-    public class ExamRepository : CommonRepository
+    public class ExaminerRepository : CommonRepository
     {
         //public async Task<ResultVM> QuestionList(string[] conditionalFields, string[] conditionalValues, SqlConnection conn, SqlTransaction transaction = null, PeramModel vm = null)
         //{
@@ -299,64 +299,8 @@ namespace ShampanExam.Repository.Exam
         }
 
 
-        public async Task<ResultVM> Insert(List<QuestionVM> Answers, SqlConnection conn = null, SqlTransaction transaction = null)
-        {
-            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
-            try
-            {
-                if (conn == null) throw new Exception("Database connection failed!");
-                if (transaction == null) transaction = conn.BeginTransaction();
-
-                string query = @"
-                INSERT INTO Exams
-                (
-                    Code, Name, Date, Time, Duration, TotalMark, GradeId, Remarks, IsExamByQuestionSet, 
-                    QuestionSetId, ExamineeGroupId, IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt
-                )
-                VALUES
-                (
-                    @Code, @Name, @Date, @Time, @Duration, @TotalMark, @GradeId, @Remarks, @IsExamByQuestionSet, 
-                    @QuestionSetId, @ExamineeGroupId, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE()
-                );
-                SELECT SCOPE_IDENTITY();";
-
-                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
-                {
-                    //cmd.Parameters.AddWithValue("@Code", vm.Code ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@Date", vm.Date ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@Time", vm.Time ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@Duration", vm.Duration);
-                    //cmd.Parameters.AddWithValue("@TotalMark", vm.TotalMark);
-                    //cmd.Parameters.AddWithValue("@GradeId", vm.GradeId ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@IsExamByQuestionSet", vm.IsExamByQuestionSet);
-                    //cmd.Parameters.AddWithValue("@QuestionSetId", vm.QuestionSetId ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@ExamineeGroupId", vm.ExamineeGroupId ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
-                    //cmd.Parameters.AddWithValue("@IsArchive", vm.IsArchive);
-                    //cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@CreatedFrom", vm.CreatedFrom ?? (object)DBNull.Value);
-
-                    //vm.Id = Convert.ToInt32(cmd.ExecuteScalar());
-                }
-
-                result.Status = "Success";
-                result.Message = "Exam inserted successfully.";
-                //result.Id = vm.Id.ToString();
-                result.DataVM = Answers;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                result.Message = ex.Message;
-                result.ExMessage = ex.ToString();
-                return result;
-            }
-        }
-
-        public async Task<ResultVM> UpdateExamQuestionOptionDetails(QuestionVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
+        public async Task<ResultVM> UpdateMarks(QuestionVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
         {
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error", Id = vm.Id.ToString(), DataVM = vm };
             try
@@ -364,9 +308,9 @@ namespace ShampanExam.Repository.Exam
                 if (conn == null) throw new Exception("Database connection failed!");
 
                 string query = @"
-                UPDATE ExamQuestionOptionDetails 
+                UPDATE ExamQuestionHeaders 
                 SET 
-                    ExamineeAnswer = @ExamineeAnswer
+                    MarkObtain = @MarkObtain
                     
                 WHERE Id = @Id";
 
@@ -374,14 +318,14 @@ namespace ShampanExam.Repository.Exam
                 {
                     cmd.Parameters.AddWithValue("@Id", vm.Id);
                   
-                    cmd.Parameters.AddWithValue("@ExamineeAnswer", true );
+                    cmd.Parameters.AddWithValue("@MarkObtain", vm.ExaminerMarks);
                    
 
                     int rows = cmd.ExecuteNonQuery();
                     if (rows > 0)
                     {
                         result.Status = "Success";
-                        result.Message = "Exam QuestionOption updated successfully.";
+                        result.Message = "Exam Question Marks updated successfully.";
                     }
                     else
                     {
@@ -397,86 +341,7 @@ namespace ShampanExam.Repository.Exam
             return result;
         }
 
-        public async Task<ResultVM> UpdateExamQuestionShortDetails(QuestionVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
-        {
-            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", Id = vm.Id.ToString(), DataVM = vm };
-            try
-            {
-                if (conn == null) throw new Exception("Database connection failed!");
 
-                string query = @"
-                UPDATE ExamQuestionShortDetails 
-                SET 
-                                        ExamineeAnswer = @ExamineeAnswer
-
-                WHERE ExamQuestionHeaderId = @ExamQuestionHeaderId";
-
-                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@ExamQuestionHeaderId", vm.Id);
-                    cmd.Parameters.AddWithValue("@ExamineeAnswer", vm.UserAnswer??"");
-
-                    int rows = cmd.ExecuteNonQuery();
-                    if (rows > 0)
-                    {
-                        result.Status = "Success";
-                        result.Message = "Exam Question Short updated successfully.";
-                    }
-                    else
-                    {
-                        throw new Exception("No rows updated.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                result.Message = ex.Message;
-                result.ExMessage = ex.ToString();
-            }
-            return result;
-        }
-
-        public async Task<ResultVM> UpdateExamQuestionOptionDefultValue(QuestionVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
-        {
-            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", Id = vm.Id.ToString(), DataVM = vm };
-            try
-            {
-                if (conn == null) throw new Exception("Database connection failed!");
-
-                string query = @"
-                UPDATE ExamQuestionOptionDetails 
-                SET 
-                    ExamineeAnswer = @ExamineeAnswer
-                    
-                WHERE ExamQuestionHeaderId = @Id and ExamId=@ExamId";
-
-                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@Id", vm.Id);
-                    cmd.Parameters.AddWithValue("@ExamId", vm.ExamId);
-                    cmd.Parameters.AddWithValue("@ExamineeAnswer", false);
-
-
-                    int rows = cmd.ExecuteNonQuery();
-                    if (rows > 0)
-                    {
-                        result.Status = "Success";
-                        result.Message = "Exam QuestionOption updated successfully.";
-                    }
-                    else
-                    {
-                        result.Status = "Success";
-                        result.Message = "Exam QuestionOption updated successfully.";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                result.Message = ex.Message;
-                result.ExMessage = ex.ToString();
-            }
-            return result;
-        }
 
 
         public async Task<ResultVM> ExamSubmit(QuestionVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
@@ -489,7 +354,7 @@ namespace ShampanExam.Repository.Exam
                 string query = @"
                 UPDATE ExamQuestionHeaders 
                 SET 
-                    IsExamSubmitted = @IsExamSubmitted
+                    IsExamMarksSubmitted = @IsExamMarksSubmitted
                     
                 WHERE ExamineeId = @ExamineeId and ExamId=@ExamId";
 
@@ -497,19 +362,19 @@ namespace ShampanExam.Repository.Exam
                 {
                     cmd.Parameters.AddWithValue("@ExamineeId", vm.ExamineeId);
                     cmd.Parameters.AddWithValue("@ExamId", vm.ExamId);
-                    cmd.Parameters.AddWithValue("@IsExamSubmitted", true);
+                    cmd.Parameters.AddWithValue("@IsExamMarksSubmitted", true);
 
 
                     int rows = cmd.ExecuteNonQuery();
                     if (rows > 0)
                     {
                         result.Status = "Success";
-                        result.Message = "Exam QuestionOption updated successfully.";
+                        result.Message = "Exam Question Marks Submitted successfully.";
                     }
                     else
                     {
                         result.Status = "Success";
-                        result.Message = "Exam QuestionOption updated successfully.";
+                        result.Message = "Exam Question Marks Submitted successfully.";
                     }
                 }
             }
@@ -528,7 +393,7 @@ namespace ShampanExam.Repository.Exam
             try
             {
                 var questionQuery = @"
-    SELECT Id, ExamId, ExamineeId, QuestionText, QuestionType, QuestionMark,QuestionHeaderId,isnull(IsExamSubmitted,0)IsExamSubmitted
+    SELECT Id, ExamId, ExamineeId, QuestionText, QuestionType, QuestionMark,QuestionHeaderId,isnull(IsExamMarksSubmitted,0)IsExamSubmitted,MarkObtain
     FROM ExamQuestionHeaders m where 1=1 
 ";
                 questionQuery = ApplyConditions(questionQuery, conditionalFields, conditionalValues, false);
@@ -558,6 +423,8 @@ namespace ShampanExam.Repository.Exam
                                     : reader.GetInt32(reader.GetOrdinal("QuestionMark")),
                                 QuestionHeaderId = reader.GetInt32(reader.GetOrdinal("QuestionHeaderId")),
                                 IsExamSubmitted = !reader.IsDBNull(7) && reader.GetBoolean(7),
+                                ExaminerMarks = reader.GetDecimal(reader.GetOrdinal("MarkObtain")),
+
 
                             };
 

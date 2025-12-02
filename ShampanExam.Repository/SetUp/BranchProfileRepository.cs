@@ -266,7 +266,7 @@ FROM
                     
                     Id = Convert.ToInt32(row["Id"]),
                     Code = row["Code"].ToString(),
-                    //UserId = row["UserId"].ToString(),
+                    UserId = row["UserId"].ToString(),
                     Name = row["Name"].ToString(),
                     TelephoneNo = row["TelephoneNo"].ToString(),
                     Email = row["Email"].ToString(),
