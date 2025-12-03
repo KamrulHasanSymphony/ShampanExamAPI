@@ -13,11 +13,11 @@ using System.Threading.Tasks;
 
 namespace ShampanExam.Service.Exam
 {
-    public class ExamService
+    public class ExaminerService
     {
         public async Task<ResultVM> QuestionList(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null, SqlTransaction Vtransaction = null, SqlConnection VcurrConn = null)
         {
-            ExamRepository _repo = new ExamRepository();
+            ExaminerRepository _repo = new ExaminerRepository();
             ResultVM result = new() { Status = "Fail", Message = "Error", Id = "0", DataVM = null };
 
             SqlConnection conn = VcurrConn ?? new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
@@ -60,7 +60,7 @@ namespace ShampanExam.Service.Exam
 
         public async Task<ResultVM> QuestionAnsList(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null, SqlTransaction Vtransaction = null, SqlConnection VcurrConn = null)
         {
-            ExamRepository _repo = new ExamRepository();
+            ExaminerRepository _repo = new ExaminerRepository();
             ResultVM result = new() { Status = "Fail", Message = "Error", Id = "0", DataVM = null };
 
             SqlConnection conn = VcurrConn ?? new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
@@ -103,7 +103,7 @@ namespace ShampanExam.Service.Exam
 
         public async Task<ResultVM> Insert(List<QuestionVM> Answers)
         {
-            ExamRepository _repo = new ExamRepository();
+            ExaminerRepository _repo = new ExaminerRepository();
             CommonRepository _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
@@ -132,28 +132,7 @@ namespace ShampanExam.Service.Exam
                 //#endregion
                 foreach (var item in Answers)
                 {
-
-                    if (item.QuestionType== "MultiOption"|| item.QuestionType == "SingleOption")
-                    {
-                        result = await _repo.UpdateExamQuestionOptionDefultValue(item, conn, transaction);
-
-                        if (item.SelectedOptionIds.Count()>0)
-                        {
-                            foreach (var OptionId in item.SelectedOptionIds)
-                            {
-                                item.Id = OptionId;
-                                result = await _repo.UpdateExamQuestionOptionDetails(item, conn, transaction);
-
-                            }
-
-                        }
-
-                    }
-                    else
-                    {
-                        result = await _repo.UpdateExamQuestionShortDetails(item, conn, transaction);
-
-                    }
+                   result = await _repo.UpdateMarks(item, conn, transaction);
 
 
                 }
@@ -184,7 +163,7 @@ namespace ShampanExam.Service.Exam
 
         public async Task<ResultVM> ExamSubmit(QuestionVM Answers)
         {
-            ExamRepository _repo = new ExamRepository();
+            ExaminerRepository _repo = new ExaminerRepository();
             CommonRepository _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 

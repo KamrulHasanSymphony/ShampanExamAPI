@@ -6,6 +6,7 @@
         public string Message { get; set; }
         public string ExMessage { get; set; }
         public string Id { get; set; }
+        public string Code { get; set; }
         public string Value { get; set; }
         public int Count { get; set; }
         public string?[] IDs { get; set; }

@@ -23,16 +23,17 @@ namespace ShampanTailor.Repository.Question
                 string query = @"
                 INSERT INTO QuestionHeaders
                 (
-                    QuestionSubjectId, QuestionChapterId, QuestionCategorieId, QuestionText, QuestionType, QuestionMark
+                    Code,QuestionSubjectId, QuestionChapterId, QuestionCategorieId, QuestionText, QuestionType, QuestionMark
                 )
                 VALUES
                 (
-                    @QuestionSubjectId, @QuestionChapterId, @QuestionCategorieId, @QuestionText, @QuestionType, @QuestionMark
+                   @Code, @QuestionSubjectId, @QuestionChapterId, @QuestionCategorieId, @QuestionText, @QuestionType, @QuestionMark
                 );
                 SELECT SCOPE_IDENTITY();";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
                 {
+                    cmd.Parameters.AddWithValue("@Code", vm.Code);
                     cmd.Parameters.AddWithValue("@QuestionSubjectId", vm.QuestionSubjectId);
                     cmd.Parameters.AddWithValue("@QuestionChapterId", vm.QuestionChapterId);
                     cmd.Parameters.AddWithValue("@QuestionCategorieId", vm.QuestionCategorieId);
@@ -46,6 +47,7 @@ namespace ShampanTailor.Repository.Question
                 result.Status = "Success";
                 result.Message = "QuestionHeader inserted successfully.";
                 result.Id = vm.Id.ToString();
+                result.Code = vm.Code.ToString();
                 result.DataVM = vm;
             }
             catch (Exception ex)
@@ -151,6 +153,7 @@ namespace ShampanTailor.Repository.Question
                 string query = @"
                 SELECT
                     ISNULL(M.Id,0) AS Id,
+                     ISNULL(M.Code,'') AS Code,
                     ISNULL(M.QuestionSubjectId,0) AS QuestionSubjectId,
                     ISNULL(M.QuestionChapterId,0) AS QuestionChapterId,
                     ISNULL(M.QuestionCategorieId,0) AS QuestionCategorieId,
@@ -184,6 +187,7 @@ namespace ShampanTailor.Repository.Question
                     model.Add(new QuestionHeaderVM
                     {
                         Id = row.Field<int>("Id"),
+                        Code = row.Field<string>("Code"),
                         QuestionSubjectId = row.Field<int>("QuestionSubjectId"),
                         QuestionChapterId = row.Field<int>("QuestionChapterId"),
                         QuestionCategorieId = row.Field<int>("QuestionCategorieId"),
@@ -258,7 +262,9 @@ namespace ShampanTailor.Repository.Question
                         (options.sort.Count > 0
                             ? "H." + options.sort[0].field + " " + options.sort[0].dir
                             : "H.Id DESC") + @") AS rowindex,
-                           ISNULL(H.Id,0) AS Id,
+                           ISNULL(H.Id,0) AS Id,                      
+                           ISNULL(H.Code,'') AS Code,
+
                            ISNULL(H.QuestionSubjectId,0) AS QuestionSubjectId,
                            ISNULL(H.QuestionChapterId,0) AS QuestionChapterId,
                            ISNULL(H.QuestionCategorieId,0) AS QuestionCategorieId,

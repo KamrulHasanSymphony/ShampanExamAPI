@@ -6,6 +6,7 @@ namespace ShampanTailor.ViewModel.QuestionVM
     public class QuestionHeaderVM : AuditVM
     {
         public int Id { get; set; }
+        public string? Code { get; set; }
 
         [Required(ErrorMessage = "Question Subject is required")]
         [Display(Name = "Question Subject")]

@@ -36,28 +36,28 @@ namespace ShampanExamAPI.Controllers.SetUp
             }
         }
 
-        // POST: api/UserProfile/Update
-        [HttpPost("Update")]
-        public async Task<ResultVM> Update(UserProfileVM vm)
-        {
-            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
-            try
-            {
-                 _service = new UserProfileService();
-                resultVM = await _service.Update(vm);
-                return resultVM;
-            }
-            catch (Exception ex)
-            {
-                return new ResultVM
-                {
-                    Status = "Fail",
-                    Message = ex.Message,
-                    ExMessage = ex.Message,
-                    DataVM = vm
-                };
-            }
-        }
+        //// POST: api/UserProfile/Update
+        //[HttpPost("Update")]
+        //public async Task<ResultVM> Update(UserProfileVM vm)
+        //{
+        //    ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+        //    try
+        //    {
+        //         _service = new UserProfileService();
+        //        resultVM = await _service.Update(vm);
+        //        return resultVM;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return new ResultVM
+        //        {
+        //            Status = "Fail",
+        //            Message = ex.Message,
+        //            ExMessage = ex.Message,
+        //            DataVM = vm
+        //        };
+        //    }
+        //}
 
         // POST: api/UserProfile/Delete
         [HttpPost("Delete")]
@@ -90,7 +90,7 @@ namespace ShampanExamAPI.Controllers.SetUp
             try
             {
                  _service = new UserProfileService();
-                resultVM = await _service.List(new[] { "U.Id" }, new[] { vm.Id}, null);
+                resultVM = await _service.List(new[] { "U.UserId" }, new[] { vm.Id}, null);
                 return resultVM;
             }
             catch (Exception ex)
@@ -129,7 +129,7 @@ namespace ShampanExamAPI.Controllers.SetUp
         }
 
         // GET: api/UserProfile/Dropdown
-        [HttpGet("Dropdown")]
+        [HttpPost("Dropdown")]
         public async Task<ResultVM> Dropdown()
         {
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };

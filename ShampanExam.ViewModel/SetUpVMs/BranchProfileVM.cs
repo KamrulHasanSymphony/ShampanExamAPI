@@ -37,7 +37,8 @@ namespace ShampanExam.ViewModel.SetUpVMs
 
         [Display(Name = "Comments")]
         public string? Comments { get; set; }
-        
+        public string? UserId { get; set; }
+
 
     }
 

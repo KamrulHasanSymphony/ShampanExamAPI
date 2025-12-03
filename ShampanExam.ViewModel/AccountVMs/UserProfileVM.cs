@@ -7,7 +7,6 @@ namespace ShampanExam.ViewModel.AccountVMs
     public class UserProfileVM : AuditVM
     {
         public string? Id { get; set; }
-
         [Required]
         [Display(Name = "User Name")]
         public string? UserName { get; set; }
@@ -37,11 +36,23 @@ namespace ShampanExam.ViewModel.AccountVMs
         [Required(ErrorMessage = "Please enter your phone number.")]
         [RegularExpression(@"^\d{11}$", ErrorMessage = "Please enter a valid 11-digit phone number.")]
         public string PhoneNumber { get; set; }
+        public string? BanglaName { get; set; }
+
+        [Display(Name = "NID No.")]
+        public string? NIDNo { get; set; }
+        [Display(Name = "Type")]
+        public int? TypeId { get; set; }
+        public string? Type { get; set; }
+
+
+        [Display(Name = "Alternative Mobile No.")]
+        public string? PhoneNumber2 { get; set; }
         public string? NormalizedPassword { get; set; }
         public string? Mode { get; set; }
         public bool IsAdmin { get; set; }
         public bool IsHeadOffice { get; set; }
-       
+        public int?  ApplicationUserId { get; set; }
+
 
     }
 

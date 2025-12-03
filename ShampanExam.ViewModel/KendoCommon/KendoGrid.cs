@@ -82,6 +82,48 @@ namespace ShampanExam.ViewModel.KendoCommon
             }
         }
 
+        public static GridEntity<T> GetGridDataQuestions_CMD( string sqlQuery, string orderby, string param1 = "", string param2 = "", string param3 = "", string param4 = "", string param5 = "", string param6 = "", string param7 = "", string param8 = "", string param9 = "", string param10 = "")
+        {
+            try
+            {
+                
+                // Open SQL connection
+                dbConn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
+                dbConn.Open();
+                cmd = new SqlCommand(sqlQuery, dbConn);
+                cmd.CommandType = CommandType.Text;
+
+               
+
+                da = new SqlDataAdapter(cmd);
+                ds = new DataSet();
+                da.Fill(ds);
+                dbConn.Close();
+                dbConn.Dispose();
+                cmd.Dispose();
+
+                DataTable countTable = ds.Tables[0]; // Total count should be in the first result set
+                int totalCount = 0;
+
+                if (countTable.Rows.Count > 0)
+                {
+                    totalCount = Convert.ToInt32(countTable.Rows[0]["totalcount"]);
+                }
+
+                // Access the second table for actual data (should be in Tables[1])
+                DataTable dataTable = ds.Tables[1]; // The actual data should be in the second result set
+                var dataList = (List<T>)ListConversion.ConvertTo<T>(dataTable).ToList();
+
+                // Create result object
+                var result = new GridResult<T>().Data(dataList, totalCount);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
         public static GridEntity<T> GetGridDataQuestions_CMD(GridOptions gridOption, string sqlQuery, string orderby, string param1 = "", string param2 = "", string param3 = "", string param4 = "", string param5 = "", string param6 = "", string param7 = "", string param8 = "", string param9 = "", string param10 = "")
         {
             try

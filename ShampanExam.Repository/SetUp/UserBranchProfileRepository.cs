@@ -190,7 +190,7 @@ ISNULL(FORMAT(UM.LastModifiedOn, 'yyyy-MM-dd HH:mm:ss'), '1900-01-01') AS LastMo
 ISNULL(FORMAT(UM.CreatedOn, 'yyyy-MM-dd HH:mm:ss'), '1900-01-01') AS CreatedOn
 
 FROM {DatabaseHelper.AuthDbName()}.[dbo].AspNetUsers U
-LEFT OUTER JOIN UserBranchMap UM on UM.UserId=U.Id
+LEFT OUTER JOIN UserBranchMap UM on UM.UserId=U.UserId
 LEFT OUTER JOIN BranchProfiles B on UM.BranchId=B.Id
 WHERE UM.UserId IS NOT NULL
 
@@ -200,6 +200,7 @@ WHERE UM.UserId IS NOT NULL
                 {
                     query += " AND UM.Id = @Id ";
                 }
+
 
                 // Apply additional conditions
                 query = ApplyConditions(query, conditionalFields, conditionalValues, false);
@@ -222,6 +223,9 @@ WHERE UM.UserId IS NOT NULL
                     IsActive = Convert.ToBoolean(row["IsActive"]),
                     BranchId = Convert.ToInt32(row["BranchId"]),
                     UserId = row["UserId"].ToString(),
+                    UserName = row["UserName"].ToString(),
+                    BranchName = row["BranchName"].ToString(),
+                    BranchCode = row["BranchCode"].ToString(),
 
                     extension = new UserBranchMapExtension
                     {
@@ -377,7 +381,7 @@ WHERE UM.UserId IS NOT NULL
         -- Count query
                     SELECT COUNT(DISTINCT UM.Id) AS totalcount
                     FROM [{DatabaseHelper.AuthDbName()}].[dbo].AspNetUsers U
-                    LEFT OUTER JOIN UserBranchMap UM ON UM.UserId=U.Id
+                    LEFT OUTER JOIN UserBranchMap UM ON UM.UserId=U.UserId
                     LEFT OUTER JOIN BranchProfiles B ON UM.BranchId=B.Id
                     WHERE UM.UserId IS NOT NULL  
         -- Add the filter condition
@@ -402,7 +406,7 @@ WHERE UM.UserId IS NOT NULL
             B.Name BranchName,
             B.Code BranchCode
             FROM [{DatabaseHelper.AuthDbName()}].[dbo].AspNetUsers U
-            LEFT OUTER JOIN UserBranchMap UM ON UM.UserId=U.Id
+            LEFT OUTER JOIN UserBranchMap UM ON UM.UserId=U.UserId
             LEFT OUTER JOIN BranchProfiles B ON UM.BranchId=B.Id
             WHERE UM.UserId IS NOT NULL
         " + (options.filter.Filters.Count > 0 ? " AND (" + GridQueryBuilder<UserBranchMapVM>.FilterCondition(options.filter) + ")" : "");

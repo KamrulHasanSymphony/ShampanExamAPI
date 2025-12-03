@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using ShampanExam.Service.SetUp;
 using ShampanExam.ViewModel.AccountVMs;
 using ShampanExam.ViewModel.CommonVMs;
 using System.IdentityModel.Tokens.Jwt;
@@ -39,45 +40,63 @@ namespace ShampanExamAPI.Controllers.Login
                     {
                         new Claim("Database", "Question_DB"),
                     };
+                UserProfileService service = new UserProfileService();
 
-                if (model.Operation == "update")
+                
+                    resultVM = await service.Insert(model);
+
+                if (resultVM.Status == "Success")
                 {
-                    var user = await _userManager.FindByNameAsync(model.UserName);
-
-                    if (user == null)
+                    if (model.Operation == "update")
                     {
-                        resultVM.Message = "User not found.";
-                        return resultVM;
-                    }
-                    if (!string.IsNullOrEmpty(model.Password) && !string.IsNullOrEmpty(model.ConfirmPassword) && model.Mode == "profileupdate")
-                    {
-                        // Update the user profile without changing the password
-                        user.Email = model.Email;
-                        user.PhoneNumber = model.PhoneNumber;
-                        user.FullName = model.FullName;
-                        user.IsHeadOffice = model.IsHeadOffice;
+                        var user = await _userManager.FindByNameAsync(model.UserName);
 
-                        var updateResult = await _userManager.UpdateAsync(user);
-                        if (!updateResult.Succeeded)
+                        if (user == null)
                         {
-                            resultVM.Message = "Failed to update user profile.";
+                            resultVM.Message = "User not found.";
+                            return resultVM;
+                        }
+                        if (!string.IsNullOrEmpty(model.Password) && !string.IsNullOrEmpty(model.ConfirmPassword) && model.Mode == "profileupdate")
+                        {
+                            // Update the user profile without changing the password
+                            user.Email = model.Email;
+                            user.PhoneNumber = model.PhoneNumber;
+                            user.FullName = model.FullName;
+                            user.IsHeadOffice = model.IsHeadOffice;
+                            user.UserId = Convert.ToInt32(resultVM.Id);
+
+                            var updateResult = await _userManager.UpdateAsync(user);
+                            if (!updateResult.Succeeded)
+                            {
+                                resultVM.Message = "Failed to update user profile.";
+                                return resultVM;
+                            }
+
+                            resultVM.Status = "Success";
+                            resultVM.Message = "User profile updated successfully.";
+                            resultVM.DataVM = model;
                             return resultVM;
                         }
 
-                        resultVM.Status = "Success";
-                        resultVM.Message = "User profile updated successfully.";
-                        resultVM.DataVM = model;
-                        return resultVM;
-                    }
-
-                    if (User.IsInRole("Admin"))
-                    {
-                        string token = "";
-                        if (user != null)
+                        if (User.IsInRole("Admin"))
                         {
-                            token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                            string token = "";
+                            if (user != null)
+                            {
+                                token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-                            var changePasswordResult = await _userManager.ResetPasswordAsync(user, token, model.Password);
+                                var changePasswordResult = await _userManager.ResetPasswordAsync(user, token, model.Password);
+
+                                if (!changePasswordResult.Succeeded)
+                                {
+                                    resultVM.Message = "Failed to change the password.";
+                                    return resultVM;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var changePasswordResult = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.Password);
 
                             if (!changePasswordResult.Succeeded)
                             {
@@ -85,85 +104,82 @@ namespace ShampanExamAPI.Controllers.Login
                                 return resultVM;
                             }
                         }
+
+                        resultVM.Status = "Success";
+                        resultVM.Message = "Password successfully updated.";
+                        resultVM.DataVM = model;
+
+                        return resultVM;
                     }
                     else
                     {
-                        var changePasswordResult = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.Password);
 
-                        if (!changePasswordResult.Succeeded)
+                        if (model.Password != model.ConfirmPassword)
                         {
-                            resultVM.Message = "Failed to change the password.";
+                            resultVM.Message = "Passwords do not match!";
                             return resultVM;
                         }
+
+                        var _user = new ApplicationUser { UserName = model.UserName, FullName = model.FullName, PhoneNumber = model.PhoneNumber, Email = model.Email, EmailConfirmed = false, PhoneNumberConfirmed = false, TwoFactorEnabled = false, LockoutEnabled = false, AccessFailedCount = 0, NormalizedName = model.UserName, NormalizedUserName = model.UserName, NormalizedEmail = model.Email, NormalizedPassword = model.Password, IsHeadOffice = model.IsHeadOffice, UserId = Convert.ToInt32(resultVM.Id) };
+
+                        var _result = await _userManager.CreateAsync(_user, model.Password);
+
+                        if (!_result.Succeeded)
+                        {
+                            foreach (var error in _result.Errors)
+                            {
+                                resultVM.Message = error.Description;
+                                return resultVM;
+                            }
+                        }
+                        var userClaimsresult = await _userManager.AddClaimsAsync(_user, claims);
+
+                        if (!userClaimsresult.Succeeded)
+                        {
+                            resultVM.Message = "Failed to add claims.";
+                            return resultVM;
+                        }
+
+                        // Ensure the default role exists
+                        await EnsureRoleExistsAsync(DefaultRoles.Role);
+                        // Assign the default role to the new user
+                        var addRolesResult = await _userManager.AddToRoleAsync(_user, DefaultRoles.Role);
+                        if (!addRolesResult.Succeeded)
+                        {
+                            resultVM.Message = "Failed to assign default role.";
+                            return resultVM;
+                        }
+
+                        // Add external login if provided
+                        var loginuser = await _userManager.FindByNameAsync(model.UserName);
+
+                        if (loginuser != null)
+                        {
+                            var userLoginInfo = new UserLoginInfo(
+                                loginProvider: "Google",
+                                providerKey: DateTime.Now.ToString("yyyMMddHHmmss"),
+                                displayName: "Google"
+                            );
+
+                            var addLoginResult = await _userManager.AddLoginAsync(_user, userLoginInfo);
+                            if (!addLoginResult.Succeeded)
+                            {
+                                resultVM.Message = "Failed to add external login.";
+                                return resultVM;
+                            }
+                        }
+
+                        resultVM.Status = "Success";
+                        resultVM.Message = "Data inserted successfully.";
+                        model.Id = _user.Id;
+                        resultVM.DataVM = model;
                     }
-
-                    resultVM.Status = "Success";
-                    resultVM.Message = "Password successfully updated.";
-                    resultVM.DataVM = model;
-
-                    return resultVM;
                 }
                 else
                 {
-
-                    if (model.Password != model.ConfirmPassword)
-                    {
-                        resultVM.Message = "Passwords do not match!";
-                        return resultVM;
-                    }
-
-                    var _user = new ApplicationUser { UserName = model.UserName, FullName = model.FullName, PhoneNumber = model.PhoneNumber, Email = model.Email, EmailConfirmed = false, PhoneNumberConfirmed  = false, TwoFactorEnabled  = false,LockoutEnabled  =false, AccessFailedCount = 0, NormalizedName = model.UserName, NormalizedUserName = model.UserName , NormalizedEmail = model.Email, NormalizedPassword  = model.Password, IsHeadOffice = model.IsHeadOffice};
-
-                    var _result = await _userManager.CreateAsync(_user, model.Password);
-
-                    if (!_result.Succeeded)
-                    {
-                        foreach (var error in _result.Errors)
-                        {
-                            resultVM.Message = error.Description;
-                            return resultVM;
-                        }
-                    }
-                    var userClaimsresult = await _userManager.AddClaimsAsync(_user, claims);
-
-                    if (!userClaimsresult.Succeeded)
-                    {
-                        resultVM.Message = "Failed to add claims.";
-                        return resultVM;
-                    }
-
-                    // Ensure the default role exists
-                    await EnsureRoleExistsAsync(DefaultRoles.Role);
-                    // Assign the default role to the new user
-                    var addRolesResult = await _userManager.AddToRoleAsync(_user, DefaultRoles.Role);
-                    if (!addRolesResult.Succeeded)
-                    {
-                        resultVM.Message = "Failed to assign default role.";
-                        return resultVM;
-                    }
-
-                    // Add external login if provided
-                    var loginuser = await _userManager.FindByNameAsync(model.UserName);
-
-                    if (loginuser != null)
-                    {
-                        var userLoginInfo = new UserLoginInfo(
-                            loginProvider: "Google",
-                            providerKey: DateTime.Now.ToString("yyyMMddHHmmss"),
-                            displayName: "Google"
-                        );
-
-                        var addLoginResult = await _userManager.AddLoginAsync(_user, userLoginInfo);
-                        if (!addLoginResult.Succeeded)
-                        {
-                            resultVM.Message = "Failed to add external login.";
-                            return resultVM;
-                        }
-                    }
-
-                    resultVM.Status = "Success";
-                    resultVM.Message = "Data inserted successfully.";
-                    model.Id = _user.Id;
+                    resultVM.Status = "Fail";
+                    resultVM.Message = resultVM.Message;
+                    resultVM.ExMessage = resultVM.ExMessage;
                     resultVM.DataVM = model;
                 }
             }

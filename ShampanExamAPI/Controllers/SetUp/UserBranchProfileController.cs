@@ -67,8 +67,23 @@ namespace ShampanExamAPI.Controllers.SetUp
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
             try
             {
-                 _service = new UserBranchProfileService();
-                resultVM = await _service.List(new[] { "UM.Id", "U.UserName" }, new[] { vm.Id, vm.UserId }, null);
+
+                     string[] conditionFields = null;
+                string[] conditionValues = null;
+                conditionFields = vm.ConditionalFields;
+                conditionValues = vm.ConditionalValues;
+                if (!string.IsNullOrEmpty(vm.Id))
+                {
+                    conditionFields = new string[] { "M.Id" };
+                    conditionValues = new string[] { vm.Id };
+                }
+                if (!string.IsNullOrEmpty(vm.UserId))
+                {
+                    conditionFields = new string[] { "U.UserName" };
+                    conditionValues = new string[] { vm.UserId };
+                }
+                _service = new UserBranchProfileService();
+                resultVM = await _service.List(conditionFields, conditionValues, null);
                 return resultVM;
             }
             catch (Exception ex)

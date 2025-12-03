@@ -12,12 +12,15 @@ namespace ShampanExam.ViewModel.QuestionVM
         public TimeSpan? Time { get; set; }
         public int Duration { get; set; }
         public int TotalMark { get; set; }
+        public int MarkObtain { get; set; }
         public int? GradeId { get; set; }
         public string? Remarks { get; set; }
         public bool IsExamByQuestionSet { get; set; }
         public int? QuestionSetId { get; set; }
         public int? ExamineeGroupId { get; set; }
-
+        public int? ExamineeId { get; set; }
+        public string? ExamineeName { get; set; }
+        public bool IsExamMarksSubmitted { get; set; }
 
         public List<ExamExamineeVM> examExamineeList { get; set; }
         public List<ExamQuestionHeaderVM> examQuestionHeaderList { get; set; }

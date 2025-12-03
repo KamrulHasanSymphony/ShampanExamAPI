@@ -7,39 +7,17 @@ using ShampanExam.ViewModel.CommonVMs;
 using ShampanExam.ViewModel.Exam;
 using ShampanExam.ViewModel.QuestionVM;
 
-namespace ShampanExamAPI.Controllers.Exam
+namespace ShampanExamAPI.Controllers.Examiner
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ExamsController : ControllerBase
+    public class ExaminerController : ControllerBase
     {
-        //ExamService _examService = new ExamService();
         CommonService _commonService = new CommonService();
 
-        ExamService _examService = new ExamService();
+        ExaminerService _examService = new ExaminerService();
 
-        // POST: api/Exams/List
-        [HttpPost("QuestionList")]
-        public async Task<ResultVM> QuestionList(CommonVM vm)
-        {
-            var result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
 
-            try
-            {
-                result = await _examService.QuestionList(new[] { "M.ExamineeId" }, new[] { vm.Id }, null);
-                return result;
-            }
-            catch (System.Exception ex)
-            {
-                return new ResultVM
-                {
-                    Status = "Fail",
-                    Message = ex.Message,
-                    ExMessage = ex.Message,
-                    DataVM = vm
-                };
-            }
-        }
 
 
         // POST: api/Exam/Insert
@@ -49,7 +27,7 @@ namespace ShampanExamAPI.Controllers.Exam
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
             try
             {
-                _examService = new ExamService();
+                _examService = new ExaminerService();
                 resultVM = await _examService.Insert(Answers);
                 return resultVM;
             }
@@ -66,7 +44,7 @@ namespace ShampanExamAPI.Controllers.Exam
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
             try
             {
-                _examService = new ExamService();
+                _examService = new ExaminerService();
                 resultVM = await _examService.ExamSubmit(Answers);
                 return resultVM;
             }
@@ -75,7 +53,6 @@ namespace ShampanExamAPI.Controllers.Exam
                 return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message, DataVM = Answers };
             }
         }
-
 
         [HttpPost("QuestionAnsList")]
         public async Task<ResultVM> QuestionAnsList(CommonVM vm)
@@ -98,7 +75,5 @@ namespace ShampanExamAPI.Controllers.Exam
                 };
             }
         }
-
-
     }
 }

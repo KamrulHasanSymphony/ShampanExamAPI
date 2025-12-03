@@ -78,8 +78,22 @@ namespace ShampanExamAPI.Controllers.Question
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
             try
             {
+                string[] conditionFields = null;
+                string[] conditionValues = null;
+                conditionFields = vm.ConditionalFields;
+                conditionValues = vm.ConditionalValues;
+                if (!string.IsNullOrEmpty(vm.Id))
+                {
+                    conditionFields = new string[] { "M.Id" };
+                    conditionValues = new string[] { vm.Id };
+                }
+                if (!string.IsNullOrEmpty(vm.Name))
+                {
+                    conditionFields = new string[] { "M.Name" };
+                    conditionValues = new string[] { vm.Name };
+                }
                 _examineeService = new ExamineeService();
-                resultVM = await _examineeService.List(new[] { "M.Id" }, new[] { vm.Id }, null);
+                resultVM = await _examineeService.List(  conditionFields , conditionValues, null);
                 return resultVM;
             }
             catch (Exception ex)
@@ -106,7 +120,7 @@ namespace ShampanExamAPI.Controllers.Question
         }
 
         // GET: api/Examinee/Dropdown
-        [HttpGet("Dropdown")]
+        [HttpPost("Dropdown")]
         public async Task<ResultVM> Dropdown()
         {
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
@@ -138,6 +152,39 @@ namespace ShampanExamAPI.Controllers.Question
                 return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message };
             }
         }
+
+        [HttpPost("GetExameelistGridData")]
+        public async Task<ResultVM> GetExameelistGridData(GridOptions options)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
+            try
+            {
+                _examineeService = new ExamineeService();
+                resultVM = await _examineeService.GetExameelistGridData(options);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message };
+            }
+        }
+
+        [HttpPost("GetExameeAlllistGridData")]
+        public async Task<ResultVM> GetExameeAlllistGridData(GridOptions options)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
+            try
+            {
+                _examineeService = new ExamineeService();
+                resultVM = await _examineeService.GetExameeAlllistGridData(options);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message };
+            }
+        }
+
 
         // POST: api/Examinee/ReportPreview
         [HttpPost("ReportPreview")]
