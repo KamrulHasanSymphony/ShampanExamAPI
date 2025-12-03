@@ -294,13 +294,62 @@ namespace ShampanExam.Repository.Question
                     result.Message = "ExamId not found in parameters.";
                     return result;
                 }
+                int groupId = 0;
+                if (conditionalFields != null && conditionalValues != null)
+                {
+                    for (int i = 0; i < conditionalFields.Length; i++)
+                    {
+                        if (conditionalFields[i].Equals("ExamineeGroupId", StringComparison.OrdinalIgnoreCase))
+                        {
+                            int.TryParse(conditionalValues[i], out groupId);
+                            break;
+                        }
+                    }
+                }
+
+                if (groupId <= 0)
+                {
+                    result.Message = "group is not found in parameters.";
+                    return result;
+                }
+                int setId = 0;
+                if (conditionalFields != null && conditionalValues != null)
+                {
+                    for (int i = 0; i < conditionalFields.Length; i++)
+                    {
+                        if (conditionalFields[i].Equals("QuestionSetId", StringComparison.OrdinalIgnoreCase))
+                        {
+                            int.TryParse(conditionalValues[i], out setId);
+                            break;
+                        }
+                    }
+                }
+
+                if (setId <= 0)
+                {
+                    result.Message = "group is not found in parameters.";
+                    return result;
+                }
 
                 using (SqlCommand cmd = new SqlCommand("InsertExamQuestionHeaders", conn, transaction))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
+
                     cmd.Parameters.AddWithValue("@ExamId", examId);
+                    //cmd.Parameters.AddWithValue("@ExamineeGroupId", groupId);
+                    //cmd.Parameters.AddWithValue("@QuestionSetId", setId);
+
                     await cmd.ExecuteNonQueryAsync();
                 }
+
+                //using (SqlCommand cmd = new SqlCommand("InsertExamQuestionHeaders", conn, transaction))
+                //{
+                //    cmd.CommandType = CommandType.StoredProcedure;
+                //    cmd.Parameters.AddWithValue("@ExamId", examId);
+                //    cmd.Parameters.AddWithValue("@ExamineeGroupId", groupId);
+                //    cmd.Parameters.AddWithValue("@QuestionSetId", setId);
+                //    await cmd.ExecuteNonQueryAsync();
+                //}
 
                 result.Status = "Success";
                 result.Message = "Exam data processed and fetched successfully.";

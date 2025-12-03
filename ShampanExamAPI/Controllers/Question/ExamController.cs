@@ -95,7 +95,7 @@ namespace ShampanExamAPI.Controllers.Question
             {
                 _examService = new ExamService();
 
-                var result = await _examService.GetProcessedData(new[] { "Id" }, new[] { vm.Id }, null);
+                var result = await _examService.GetProcessedData(new[] { "Id", "ExamineeGroupId", "QuestionSetId" }, new[] { vm.Id,vm.Group,vm.Value }, null);
 
                 if (result.Status == "Success")
                 {

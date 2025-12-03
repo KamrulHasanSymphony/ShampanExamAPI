@@ -28,7 +28,7 @@ namespace ShampanExam.Repository.Question
                 )
                 VALUES
                 (
-                    @Name, @TotalMark, @Remarks, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE()
+                    @Name, @TotalMark, @Remarks, 'true', @IsArchive, @CreatedBy, @CreatedFrom, GETDATE()
                 );
                 SELECT SCOPE_IDENTITY();";
 
@@ -37,7 +37,7 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@TotalMark", vm.TotalMark);
                     cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
+                    //cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
                     cmd.Parameters.AddWithValue("@IsArchive", vm.IsArchive);
                     cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@CreatedFrom", vm.CreatedFrom ?? (object)DBNull.Value);
