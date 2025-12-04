@@ -87,6 +87,33 @@ namespace ShampanExamAPI.Controllers.Question
                 return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message, DataVM = vm };
             }
         }
+
+
+        [HttpPost("ExamInfoReport")]
+        public async Task<ResultVM> ExamInfoReport(CommonVM vm)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+            try
+            {
+                _examService = new ExamService();
+                resultVM = await _examService.GetExamInfoReport(new[] { "EX.Id" }, new[] { vm.Id }, null);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.Message,
+                    DataVM = vm
+                };
+            }
+        }
+
+
+
+
         // POST: api/Exam/GetProcessedData
         [HttpPost("GetProcessedData")]
         public async Task<IActionResult> GetProcessedData([FromBody] CommonVM vm)

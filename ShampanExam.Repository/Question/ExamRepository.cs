@@ -1,13 +1,17 @@
-﻿using ShampanExam.Repository.Common;
+﻿using Newtonsoft.Json;
+using ShampanExam.Repository.Common;
 using ShampanExam.ViewModel.CommonVMs;
+using ShampanExam.ViewModel.Exam;
 using ShampanExam.ViewModel.KendoCommon;
 using ShampanExam.ViewModel.QuestionVM;
 using ShampanExam.ViewModel.Utility;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
+using ExamVM = ShampanExam.ViewModel.QuestionVM.ExamVM;
 
 namespace ShampanExam.Repository.Question
 {
@@ -268,6 +272,155 @@ namespace ShampanExam.Repository.Question
                 return result;
             }
         }
+
+
+
+        public async Task<ResultVM> GetExamInfoReport(string[] conditionalFields, string[] conditionalValues, PeramModel vm, SqlConnection conn, SqlTransaction transaction)
+        {
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, DataVM = null };
+
+            try
+            {
+                // Define base query for feeding plan report
+                string query = @"
+         SELECT 
+ISNULL(EX.Id,0) AS Id, 
+ISNULL(EX.Name,'') AS ExamName, 
+ISNULL(EX.Code,'') AS ExamCode,
+ISNULL(EX.TotalMark,'') AS TotalMark,
+ISNULL(EX.Duration,'') AS Duration, 
+ISNULL(EX.Date,'') AS ExamDate
+FROM Exams EX
+WHERE 1 = 1
+              ";
+
+                // Apply dynamic filter conditions
+                query = ApplyConditions(query, conditionalFields, conditionalValues, false);
+
+                // Initialize SqlDataAdapter for executing the query
+                SqlDataAdapter adapter = CreateAdapter(query, conn, transaction);
+                adapter.SelectCommand = ApplyParameters(adapter.SelectCommand, conditionalFields, conditionalValues);
+
+                adapter.Fill(dataTable);
+
+                var model = dataTable.AsEnumerable().Select(row => new ExamReportHeaderVM
+                {
+                    Id = Convert.ToInt32(row["Id"]),
+                    ExamCode = row["ExamCode"]?.ToString(),
+                    ExamName = row["ExamName"]?.ToString(),
+                    TotalMark = row["TotalMark"]?.ToString(),
+                    Duration = row["Duration"]?.ToString(),
+                    ExamDate = row["ExamDate"]?.ToString()
+                }).ToList();
+
+                // Load details
+                var detailResult = DetailsList(new[] { "ExamId" }, conditionalValues, vm, conn, transaction);
+
+                if (detailResult.Status == "Success" && detailResult.DataVM is DataTable dts)
+                {
+                    string json = JsonConvert.SerializeObject(dts);
+                    var details = JsonConvert.DeserializeObject<List<ExamReportDetailVM>>(json);
+
+                    if (model.Any())
+                        model.First().examReportDetailList = details;
+                }
+
+                result.Status = "Success";
+                result.Message = "Exam report data retrieved successfully.";
+                result.DataVM = model;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Status = "Fail";
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
+
+
+        #region DetailsList
+        public ResultVM DetailsList(string[] conditionalFields, string[] conditionalValues, PeramModel vm, SqlConnection conn, SqlTransaction transaction)
+        {
+            ResultVM result = new ResultVM { Status = "Fail" };
+            DataTable dataTable = new DataTable();
+
+            try
+            {
+                string query = @"
+                SELECT  
+----master---
+    Exams.Code AS ExamCode,
+    Exams.Name AS ExamName,
+    Exams.Duration,
+    Exams.Date,
+	----master---
+
+		----Details---
+    Examinees.Name AS ExamineeName,
+    Examinees.MobileNo AS ExamineeMobileNo,
+    Exams.TotalMark,
+    Examinees.MarkObtain,
+    -- ⭐ Grade from GradeDetails
+    GradeDetails.Grade,
+    -- (Optional) Percentage
+    ((Examinees.MarkObtain / Exams.TotalMark) * 100) AS Percentage
+			----Details---
+
+FROM  
+(
+    SELECT  
+        ExamId,
+        Examinees.Name,
+        Examinees.MobileNo,
+        ExamineeId,
+        SUM(MarkObtain) AS MarkObtain  
+    FROM ExamQuestionHeaders
+    LEFT JOIN Examinees 
+        ON ExamQuestionHeaders.ExamineeId = Examinees.Id
+    WHERE IsExamMarksSubmitted = 1
+    GROUP BY ExamId, Examinees.Name, Examinees.MobileNo, ExamineeId
+) AS Examinees
+
+LEFT JOIN Exams 
+    ON Exams.Id = Examinees.ExamId
+
+LEFT JOIN Grades 
+    ON Exams.GradeId = Grades.Id
+
+LEFT JOIN GradeDetails 
+    ON GradeDetails.GradeId = Grades.Id
+    AND ((Examinees.MarkObtain / Exams.TotalMark) * 100) 
+        BETWEEN GradeDetails.MinPercentage AND GradeDetails.MaxPercentage
+
+
+-----Perameter-----
+		where 1=1
+
+		-----Perameter-----";
+
+                query = ApplyConditions(query, conditionalFields, conditionalValues, false);
+
+                SqlDataAdapter da = CreateAdapter(query, conn, transaction);
+                da.SelectCommand = ApplyParameters(da.SelectCommand, conditionalFields, conditionalValues);
+                da.Fill(dataTable);
+
+                result.Status = "Success";
+                result.Message = "Issue Details retrieved successfully.";
+                result.DataVM = dataTable;
+            }
+            catch (Exception ex)
+            {
+                result.Message = "Error in DetailsList.";
+                result.ExMessage = ex.ToString();
+            }
+            return result;
+        }
+        #endregion
+
+
 
         // GetProcessedData Mathod
         public async Task<ResultVM> GetProcessedData( string[] conditionalFields, string[] conditionalValues, PeramModel vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
