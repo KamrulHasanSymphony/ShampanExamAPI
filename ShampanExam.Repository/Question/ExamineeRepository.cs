@@ -513,5 +513,77 @@ GROUP BY
             }
         }
 
+        public async Task<ResultVM> GetExameeAlllistGridDataNotSubmitted(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+
+                var data = new GridEntity<ExamVM>();
+
+                string sqlQuery = @"
+        -- Count
+        SELECT COUNT(DISTINCT H.Id) AS totalcount
+        FROM Exams H
+left outer join ExamQuestionHeaders EQ on H.id=EQ.ExamId
+
+        WHERE H.IsArchive != 1";
+
+
+                sqlQuery += @"
+      
+SELECT
+    ISNULL(H.Id, 0) AS Id,
+    ISNULL(H.Code, '') AS Code,
+    ISNULL(H.Name, '') AS Name,
+    ISNULL(H.Date, '') AS Date,
+    ISNULL(H.Time, '') AS Time,
+    ISNULL(H.Duration, 0) AS Duration,
+    ISNULL(H.TotalMark, 0) AS TotalMark,
+    ISNULL(SUM(EQ.MarkObtain), 0) AS MarkObtain,
+    ISNULL(H.Remarks, '') AS Remarks,
+    ISNULL(EQ.IsExamMarksSubmitted, 0) AS IsExamMarksSubmitted,
+    EQ.ExamineeId,
+    E.Name AS ExamineeName,
+    CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
+FROM Exams H
+LEFT JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
+LEFT JOIN Examinees E ON E.Id = EQ.ExamineeId
+WHERE H.IsArchive <> 1";
+
+                if(!string .IsNullOrEmpty(options.vm.Id) && options.vm.Id!="0")
+                { 
+                    //sqlQuery += @" and EQ.ExamineeId= " +''+ "
+                }
+
+
+sqlQuery += @"
+GROUP BY
+    H.Id, H.Code, H.Name, H.Date, H.Time, H.Duration, H.TotalMark,IsExamMarksSubmitted,
+    H.Remarks, H.IsActive,
+    EQ.ExamineeId, E.Name
+
+
+        
+        ";
+
+                data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+                result.Status = "Success";
+                result.Message = "Exams grid data retrieved successfully.";
+                result.DataVM = data;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
+
+
     }
 }

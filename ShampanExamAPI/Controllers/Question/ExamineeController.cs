@@ -184,7 +184,21 @@ namespace ShampanExamAPI.Controllers.Question
                 return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message };
             }
         }
-
+        [HttpPost("GetExameeAlllistGridDataNotSubmittedData")]
+        public async Task<ResultVM> GetExameeAlllistGridDataNotSubmittedData(GridOptions options)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
+            try
+            {
+                _examineeService = new ExamineeService();
+                resultVM = await _examineeService.GetExameeAlllistGridDataNotSubmitted(options);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message };
+            }
+        }
 
         // POST: api/Examinee/ReportPreview
         [HttpPost("ReportPreview")]

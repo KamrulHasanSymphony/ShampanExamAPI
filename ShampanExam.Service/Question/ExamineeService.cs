@@ -390,6 +390,44 @@ namespace ShampanExam.Service.Question
                 if (isNewConnection && conn != null) conn.Close();
             }
         }
+
+        public async Task<ResultVM> GetExameeAlllistGridDataNotSubmitted(GridOptions options)
+        {
+            ExamineeRepository _repo = new ExamineeRepository();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            bool isNewConnection = false;
+            SqlConnection conn = null;
+            SqlTransaction transaction = null;
+
+            try
+            {
+                conn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
+                conn.Open();
+                isNewConnection = true;
+                transaction = conn.BeginTransaction();
+
+                result = await _repo.GetExameeAlllistGridDataNotSubmitted(options, conn, transaction);
+
+                if (isNewConnection && result.Status == "Success")
+                    transaction.Commit();
+                else
+                    throw new Exception(result.Message);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                if (transaction != null && isNewConnection) transaction.Rollback();
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+            finally
+            {
+                if (isNewConnection && conn != null) conn.Close();
+            }
+        }
         public async Task<ResultVM> ReportPreview(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null)
         {
             ExamineeRepository _repo = new ExamineeRepository();
