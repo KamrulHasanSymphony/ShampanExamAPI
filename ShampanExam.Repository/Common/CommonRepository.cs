@@ -1,5 +1,6 @@
 ﻿using ShampanExam.ViewModel.CommonVMs;
 using ShampanExam.ViewModel.KendoCommon;
+using ShampanExam.ViewModel.QuestionVM;
 using ShampanExam.ViewModel.SetUpVMs;
 using ShampanExam.ViewModel.Utility;
 using ShampanTailor.ViewModel.QuestionVM;
@@ -1930,6 +1931,95 @@ WHERE P.IsActive = 1 ";
             return result;
         }
 
+
+        public async Task<ResultVM> GetSubjectList(string[] conditionalFields, string[] conditionalValues, SqlConnection conn, SqlTransaction transaction)
+        {
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, DataVM = null };
+
+            try
+            {
+                if (conn == null)
+                {
+                    throw new Exception("Database connection fail!");
+                }
+
+                string sqlQuery = @"
+        SELECT Id, Name
+        FROM QuestionSubjects
+        WHERE IsActive = 1"; 
+
+                //sqlQuery = ApplyConditions(sqlQuery, conditionalFields, conditionalValues, false);
+
+                SqlDataAdapter objComm = CreateAdapter(sqlQuery, conn, transaction);
+
+                //objComm.SelectCommand = ApplyParameters(objComm.SelectCommand, conditionalFields, conditionalValues);
+                objComm.Fill(dataTable);
+
+                var modelList = dataTable.AsEnumerable()
+                    .Select(row => new QuestionSubjectVM
+                    {
+                        Id = row.Field<int?>("Id") ?? 0,
+                        Name = row.Field<string>("Name") ?? ""
+                    })
+                .ToList();
+
+                result.Status = "Success";
+                result.Message = "Data retrieved successfully.";
+                result.DataVM = modelList;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.ExMessage = ex.Message;
+                result.Message = ex.Message;
+                return result;
+            }
+        }
+
+        public async Task<ResultVM> GetQuestionTypeList(string[] conditionalFields, string[] conditionalValues, SqlConnection conn, SqlTransaction transaction)
+        {
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, DataVM = null };
+
+            try
+            {
+                if (conn == null)
+                {
+                    throw new Exception("Database connection fail!");
+                }
+
+                string sqlQuery = @"
+        SELECT  Distinct 
+      QuestionType AS Name
+	  FROM QuestionHeaders"; 
+
+                //sqlQuery = ApplyConditions(sqlQuery, conditionalFields, conditionalValues, false);
+
+                SqlDataAdapter objComm = CreateAdapter(sqlQuery, conn, transaction);
+
+                //objComm.SelectCommand = ApplyParameters(objComm.SelectCommand, conditionalFields, conditionalValues);
+                objComm.Fill(dataTable);
+
+                var modelList = dataTable.AsEnumerable()
+                    .Select(row => new EnumTypeVM
+                    {
+                        Name = row.Field<string>("Name") ?? ""
+                    })
+                .ToList();
+
+                result.Status = "Success";
+                result.Message = "Data retrieved successfully.";
+                result.DataVM = modelList;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.ExMessage = ex.Message;
+                result.Message = ex.Message;
+                return result;
+            }
+        }
 
 
 
