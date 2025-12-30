@@ -76,6 +76,56 @@ namespace ShampanExam.Repository.Question
             }
         }
 
+        public async Task<ResultVM> DetailsInsert(AutomatedExamDetailsVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+                if (transaction == null) transaction = conn.BeginTransaction();
+
+                string query = @"
+                INSERT INTO AutomatedExamDetails
+                (
+                    AutomatedExamId
+      ,SubjectId
+      ,NumberOfQuestion
+      ,QuestionType
+      ,QuestionMark
+                )
+                VALUES
+                (
+                    @AutomatedExamId, @SubjectId, @NumberOfQuestion, @QuestionType, @QuestionMark
+                );
+                SELECT SCOPE_IDENTITY();";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@AutomatedExamId", vm.Id );
+                    cmd.Parameters.AddWithValue("@SubjectId", vm.SubjectId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@NumberOfQuestion", vm.NumberOfQuestion ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@QuestionType", vm.QuestionType ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@QuestionMark", vm.QuestionMark);
+                    vm.Id = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                result.Status = "Success";
+                result.Message = "Exam Details inserted successfully.";
+                result.Id = vm.Id.ToString();
+                result.DataVM = vm;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
+
+
         // Update Method
         public async Task<ResultVM> Update(ExamVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
         {
@@ -197,6 +247,115 @@ namespace ShampanExam.Repository.Question
             }
         }
 
+        //       // List Method
+        //       public async Task<ResultVM> List(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null,
+        //           SqlConnection conn = null, SqlTransaction transaction = null)
+        //       {
+        //           DataTable dt = new DataTable();
+        //           ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+        //           try
+        //           {
+        //               if (conn == null) throw new Exception("Database connection failed!");
+
+        //               string query = @"
+        //               SELECT 
+        //                   ISNULL(M.Id,0) AS Id,
+        //                   ISNULL(M.Code, '') AS Code,
+        //                   ISNULL(M.Name, '') AS Name,
+        //                   ISNULL(FORMAT(M.Date, 'yyyy-MM-dd'), '') AS Date,
+        //                   ISNULL(M.Time, '') AS Time,
+        //                   ISNULL(M.Duration, 0) AS Duration,
+        //                   ISNULL(M.TotalMark, 0) AS TotalMark,
+        //                   ISNULL(M.GradeId, 0) AS GradeId,
+        //                   ISNULL(M.Remarks, '') AS Remarks,
+        //                   ISNULL(M.IsExamByQuestionSet, 0) AS IsExamByQuestionSet,
+        //                   ISNULL(M.QuestionSetId, 0) AS QuestionSetId,
+        //                   ISNULL(M.ExamineeGroupId, 0) AS ExamineeGroupId,
+        //                   ISNULL(M.IsActive, 0) AS IsActive,
+        //                   ISNULL(M.IsArchive, 0) AS IsArchive,
+        //                   ISNULL(M.CreatedBy, '') AS CreatedBy,
+        //                   ISNULL(FORMAT(M.CreatedAt, 'yyyy-MM-dd HH:mm'), '') AS CreatedAt,
+        //                   ISNULL(M.LastUpdateBy, '') AS LastUpdateBy,
+        //                   ISNULL(FORMAT(M.LastUpdateAt, 'yyyy-MM-dd HH:mm'), '') AS LastUpdateAt
+        //               FROM Exams M
+        //               WHERE 1=1";
+
+        //               query = ApplyConditions(query, conditionalFields, conditionalValues, false);
+
+        //               SqlDataAdapter adapter = CreateAdapter(query, conn, transaction);
+        //               adapter.SelectCommand = ApplyParameters(adapter.SelectCommand, conditionalFields, conditionalValues);
+        //               adapter.Fill(dt);
+
+        //               var list = dt.AsEnumerable().Select(row => new ExamVM
+        //               {
+        //                   Id = row.Field<int>("Id"),
+        //                   Code = row.Field<string>("Code"),
+        //                   Name = row.Field<string>("Name"),
+        //                   Date = row.Field<string>("Date"),
+        //                   Time = row.Field<TimeSpan?>("Time"),
+        //                   Duration = row.Field<int>("Duration"),
+        //                   TotalMark = row.Field<int>("TotalMark"),
+        //                   GradeId = row.Field<int?>("GradeId"),
+        //                   Remarks = row.Field<string>("Remarks"),
+        //                   IsExamByQuestionSet = row.Field<bool>("IsExamByQuestionSet"),
+        //                   QuestionSetId = row.Field<int?>("QuestionSetId"),
+        //                   ExamineeGroupId = row.Field<int?>("ExamineeGroupId"),
+        //                   IsActive = row.Field<bool>("IsActive"),
+        //                   IsArchive = row.Field<bool>("IsArchive"),
+        //                   CreatedBy = row.Field<string>("CreatedBy"),
+        //                   CreatedAt = row.Field<string>("CreatedAt"),
+        //                   LastUpdateBy = row.Field<string>("LastUpdateBy"),
+        //                   LastUpdateAt = row.Field<string>("LastUpdateAt")
+        //               }).ToList();
+
+
+
+        //               if (list.Count>0)
+        //               {
+        //                   string newquery = @"
+        //               SELECT  [Id]
+        //     ,[AutomatedExamId]
+        //     ,[SubjectId]
+        //     ,[NumberOfQuestion]
+        //     ,[QuestionType]
+        //     ,[QuestionMark]
+        //From [AutomatedExamDetails]";
+
+        //                   query = ApplyConditions(newquery, new[] { "[AutomatedExamId]" }, conditionalValues, false);
+
+        //                    adapter = CreateAdapter(newquery, conn, transaction);
+        //                   adapter.SelectCommand = ApplyParameters(adapter.SelectCommand, conditionalFields, conditionalValues);
+        //                   adapter.Fill(dt);
+
+        //                   var listt = dt.AsEnumerable().Select(row => new AutomatedExamDetailsVM
+        //                   {
+        //                       Id = row.Field<int>("Id"),
+        //                       AutomatedExamId = row.Field<string>("AutomatedExamId"),
+        //                       SubjectId = row.Field<int>("SubjectId"),
+        //                       NumberOfQuestion = row.Field<int>("NumberOfQuestion"),
+        //                       QuestionType = row.Field<string>("QuestionType"),
+        //                       QuestionMark = row.Field<int>("QuestionMark"),
+
+        //                   }).ToList();
+        //                   list.automatedExamDetailList= listt
+        //               }
+        //               result.Status = "Success";
+        //               result.Message = "Exams retrieved successfully.";
+        //               result.DataVM = list;
+
+        //               return result;
+        //           }
+        //           catch (Exception ex)
+        //           {
+        //               result.Message = ex.Message;
+        //               result.ExMessage = ex.ToString();
+        //               return result;
+        //           }
+        //       }
+
+
+        //List Method
         // List Method
         public async Task<ResultVM> List(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null,
             SqlConnection conn = null, SqlTransaction transaction = null)
@@ -209,27 +368,27 @@ namespace ShampanExam.Repository.Question
                 if (conn == null) throw new Exception("Database connection failed!");
 
                 string query = @"
-                SELECT 
-                    ISNULL(M.Id,0) AS Id,
-                    ISNULL(M.Code, '') AS Code,
-                    ISNULL(M.Name, '') AS Name,
-                    ISNULL(FORMAT(M.Date, 'yyyy-MM-dd'), '') AS Date,
-                    ISNULL(M.Time, '') AS Time,
-                    ISNULL(M.Duration, 0) AS Duration,
-                    ISNULL(M.TotalMark, 0) AS TotalMark,
-                    ISNULL(M.GradeId, 0) AS GradeId,
-                    ISNULL(M.Remarks, '') AS Remarks,
-                    ISNULL(M.IsExamByQuestionSet, 0) AS IsExamByQuestionSet,
-                    ISNULL(M.QuestionSetId, 0) AS QuestionSetId,
-                    ISNULL(M.ExamineeGroupId, 0) AS ExamineeGroupId,
-                    ISNULL(M.IsActive, 0) AS IsActive,
-                    ISNULL(M.IsArchive, 0) AS IsArchive,
-                    ISNULL(M.CreatedBy, '') AS CreatedBy,
-                    ISNULL(FORMAT(M.CreatedAt, 'yyyy-MM-dd HH:mm'), '') AS CreatedAt,
-                    ISNULL(M.LastUpdateBy, '') AS LastUpdateBy,
-                    ISNULL(FORMAT(M.LastUpdateAt, 'yyyy-MM-dd HH:mm'), '') AS LastUpdateAt
-                FROM Exams M
-                WHERE 1=1";
+        SELECT 
+            ISNULL(M.Id,0) AS Id,
+            ISNULL(M.Code, '') AS Code,
+            ISNULL(M.Name, '') AS Name,
+            ISNULL(FORMAT(M.Date, 'yyyy-MM-dd'), '') AS Date,
+            ISNULL(M.Time, '') AS Time,
+            ISNULL(M.Duration, 0) AS Duration,
+            ISNULL(M.TotalMark, 0) AS TotalMark,
+            ISNULL(M.GradeId, 0) AS GradeId,
+            ISNULL(M.Remarks, '') AS Remarks,
+            ISNULL(M.IsExamByQuestionSet, 0) AS IsExamByQuestionSet,
+            ISNULL(M.QuestionSetId, 0) AS QuestionSetId,
+            ISNULL(M.ExamineeGroupId, 0) AS ExamineeGroupId,
+            ISNULL(M.IsActive, 0) AS IsActive,
+            ISNULL(M.IsArchive, 0) AS IsArchive,
+            ISNULL(M.CreatedBy, '') AS CreatedBy,
+            ISNULL(FORMAT(M.CreatedAt, 'yyyy-MM-dd HH:mm'), '') AS CreatedAt,
+            ISNULL(M.LastUpdateBy, '') AS LastUpdateBy,
+            ISNULL(FORMAT(M.LastUpdateAt, 'yyyy-MM-dd HH:mm'), '') AS LastUpdateAt
+        FROM Exams M
+        WHERE 1=1";
 
                 query = ApplyConditions(query, conditionalFields, conditionalValues, false);
 
@@ -259,6 +418,42 @@ namespace ShampanExam.Repository.Question
                     LastUpdateAt = row.Field<string>("LastUpdateAt")
                 }).ToList();
 
+                if (list.Count > 0)
+                {
+                    string newquery = @"
+            SELECT [Id],
+                   [AutomatedExamId],
+                   [SubjectId],
+                   [NumberOfQuestion],
+                   [QuestionType],
+                   [QuestionMark]
+            FROM [AutomatedExamDetails]
+            WHERE 1=1";
+
+                    newquery = ApplyConditions(newquery, new[] { "AutomatedExamId" }, conditionalValues, false);
+
+                    DataTable dt2 = new DataTable();
+                    adapter = CreateAdapter(newquery, conn, transaction);
+                    adapter.SelectCommand = ApplyParameters(adapter.SelectCommand, new[] { "AutomatedExamId" }, conditionalValues);
+                    adapter.Fill(dt2);
+
+                    var listt = dt2.AsEnumerable().Select(row => new AutomatedExamDetailsVM
+                    {
+                        Id = row.Field<int>("Id"),
+                        AutomatedExamId = row.Field<int>("AutomatedExamId"),
+                        SubjectId = row.Field<int>("SubjectId"),
+                        NumberOfQuestion = row.Field<int>("NumberOfQuestion"),
+                        QuestionType = row.Field<string>("QuestionType"),
+                        QuestionMark = row.Field<decimal>("QuestionMark"),
+                    }).ToList();
+
+                    // Assign the details to each exam (if needed for all exams)
+                    foreach (var exam in list)
+                    {
+                        exam.automatedExamDetailList = listt;
+                    }
+                }
+
                 result.Status = "Success";
                 result.Message = "Exams retrieved successfully.";
                 result.DataVM = list;
@@ -272,9 +467,6 @@ namespace ShampanExam.Repository.Question
                 return result;
             }
         }
-
-
-
         public async Task<ResultVM> GetExamInfoReport(string[] conditionalFields, string[] conditionalValues, PeramModel vm, SqlConnection conn, SqlTransaction transaction)
         {
             DataTable dataTable = new DataTable();
