@@ -258,5 +258,38 @@ namespace ShampanExamAPI.Controllers.Question
         //        throw new Exception($"Error generating report: {ex.Message}");
         //    }
         //}
+
+        // POST: api/Exam/GetRandomProcessedData
+        [HttpPost("GetRandomProcessedData")]
+        public async Task<IActionResult> GetRandomProcessedData([FromBody] CommonVM vm)
+        {
+            try
+            {
+                _examService = new ExamService();
+
+                var result = await _examService.GetRandomProcessedData(new[] { "Id", "ExamineeGroupId", "QuestionSetId", "QuestionSubjectId", "QuestionType", "NoOfQuestion" }, new[] { vm.Id, vm.Group, vm.Value,vm.QuestionSubjectId,vm.QuestionType,vm.NoOfQuestion }, null);
+
+                if (result.Status == "Success")
+                {
+                    var resultList = await _examService.ListOfProcessedData(new[] { "Id" }, new[] { vm.Id }, null);
+
+                    return Ok(resultList);
+                }
+                else
+                {
+                    return Ok(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.ToString(),
+                    DataVM = vm
+                });
+            }
+        }
     }
 }

@@ -421,14 +421,16 @@ namespace ShampanExam.Repository.Question
                 if (list.Count > 0)
                 {
                     string newquery = @"
-            SELECT [Id],
-                   [AutomatedExamId],
-                   [SubjectId],
-                   [NumberOfQuestion],
-                   [QuestionType],
-                   [QuestionMark]
-            FROM [AutomatedExamDetails]
-            WHERE 1=1";
+                    SELECT AutomatedExamDetails.Id,
+                           [AutomatedExamId],
+                           [SubjectId],
+	                       S.Name SubjectName,
+                           [NumberOfQuestion],
+                           [QuestionType],
+                           [QuestionMark]
+                    FROM [AutomatedExamDetails]
+                    LEFT OUTER JOIN QuestionSubjects S ON AutomatedExamDetails.SubjectId = S.Id
+                    WHERE 1=1";
 
                     newquery = ApplyConditions(newquery, new[] { "AutomatedExamId" }, conditionalValues, false);
 
@@ -444,6 +446,7 @@ namespace ShampanExam.Repository.Question
                         SubjectId = row.Field<int>("SubjectId"),
                         NumberOfQuestion = row.Field<int>("NumberOfQuestion"),
                         QuestionType = row.Field<string>("QuestionType"),
+                        SubjectName = row.Field<string>("SubjectName"),
                         QuestionMark = row.Field<decimal>("QuestionMark"),
                     }).ToList();
 
@@ -898,6 +901,162 @@ LEFT JOIN GradeDetails
             }
         }
 
+        public async Task<ResultVM> GetRandomProcessedData(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            try
+            {
+                int examId = 0, groupId = 0, setId = 0, questionSubjectId = 0, noOfQuestion = 0;
+                string questionType = null;
+
+                if (conditionalFields != null && conditionalValues != null)
+                {
+                    for (int i = 0; i < conditionalFields.Length; i++)
+                    {
+                        switch (conditionalFields[i].ToLower())
+                        {
+                            case "id":
+                                int.TryParse(conditionalValues[i], out examId);
+                                break;
+                            case "examineegroupid":
+                                int.TryParse(conditionalValues[i], out groupId);
+                                break;
+                            case "questionsetid":
+                                int.TryParse(conditionalValues[i], out setId);
+                                break;
+                            case "questionsubjectid":
+                                int.TryParse(conditionalValues[i], out questionSubjectId);
+                                break;
+                            case "questiontype":
+                                questionType = conditionalValues[i];
+                                break;
+                            case "noofquestion":
+                                int.TryParse(conditionalValues[i], out noOfQuestion);
+                                break;
+                        }
+                    }
+                }
+
+                // Validation
+                //if (examId <= 0) return new ResultVM { Status = "Fail", Message = "ExamId not found." };
+                //if (groupId <= 0) return new ResultVM { Status = "Fail", Message = "GroupId not found." };
+                //if (setId <= 0) return new ResultVM { Status = "Fail", Message = "QuestionSetId not found." };
+                //if (questionSubjectId <= 0) return new ResultVM { Status = "Fail", Message = "QuestionSubjectId not found." };
+                //if (string.IsNullOrEmpty(questionType)) return new ResultVM { Status = "Fail", Message = "QuestionType not found." };
+                //if (noOfQuestion <= 0) return new ResultVM { Status = "Fail", Message = "NoOfQuestion not found." };
+
+                using (SqlCommand cmd = new SqlCommand("InsertRandomExamQuestionHeaders", conn, transaction))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    // Pass all parameters
+                    cmd.Parameters.AddWithValue("@ExamId", examId);
+                    cmd.Parameters.AddWithValue("@QuestionSubjectId", questionSubjectId);
+                    cmd.Parameters.AddWithValue("@QuestionType", questionType);
+                    cmd.Parameters.AddWithValue("@NoOfQuestion", noOfQuestion);
+
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                result.Status = "Success";
+                result.Message = "Exam data processed and fetched successfully.";
+                result.DataVM = result;
+            }
+            catch (Exception ex)
+            {
+                result.Status = "Fail";
+                result.Message = "Error occurred while processing exam data.";
+                result.ExMessage = ex.Message;
+            }
+
+            return result;
+        }
+
+        //public async Task<ResultVM> GetRandomProcessedData(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
+        //{
+        //    ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+        //    try
+        //    {
+        //        int examId = 0;
+        //        if (conditionalFields != null && conditionalValues != null)
+        //        {
+        //            for (int i = 0; i < conditionalFields.Length; i++)
+        //            {
+        //                if (conditionalFields[i].Equals("Id", StringComparison.OrdinalIgnoreCase))
+        //                {
+        //                    int.TryParse(conditionalValues[i], out examId);
+        //                    break;
+        //                }
+        //            }
+        //        }
+
+        //        if (examId <= 0)
+        //        {
+        //            result.Message = "ExamId not found in parameters.";
+        //            return result;
+        //        }
+        //        int groupId = 0;
+        //        if (conditionalFields != null && conditionalValues != null)
+        //        {
+        //            for (int i = 0; i < conditionalFields.Length; i++)
+        //            {
+        //                if (conditionalFields[i].Equals("ExamineeGroupId", StringComparison.OrdinalIgnoreCase))
+        //                {
+        //                    int.TryParse(conditionalValues[i], out groupId);
+        //                    break;
+        //                }
+        //            }
+        //        }
+
+        //        if (groupId <= 0)
+        //        {
+        //            result.Message = "group is not found in parameters.";
+        //            return result;
+        //        }
+        //        int setId = 0;
+        //        if (conditionalFields != null && conditionalValues != null)
+        //        {
+        //            for (int i = 0; i < conditionalFields.Length; i++)
+        //            {
+        //                if (conditionalFields[i].Equals("QuestionSetId", StringComparison.OrdinalIgnoreCase))
+        //                {
+        //                    int.TryParse(conditionalValues[i], out setId);
+        //                    break;
+        //                }
+        //            }
+        //        }
+
+        //        if (setId <= 0)
+        //        {
+        //            result.Message = "group is not found in parameters.";
+        //            return result;
+        //        }
+
+        //        using (SqlCommand cmd = new SqlCommand("InsertRandomExamQuestionHeaders", conn, transaction))
+        //        {
+        //            cmd.CommandType = CommandType.StoredProcedure;
+
+        //            cmd.Parameters.AddWithValue("@ExamId", examId);
+
+        //            await cmd.ExecuteNonQueryAsync();
+        //        }
+
+        //        result.Status = "Success";
+        //        result.Message = "Exam data processed and fetched successfully.";
+        //        result.DataVM = result;
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Status = "Fail";
+        //        result.Message = "Error occurred while processing exam data.";
+        //        result.ExMessage = ex.Message;
+        //    }
+
+        //    return result;
+        //}
 
     }
 }
