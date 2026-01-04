@@ -922,9 +922,6 @@ LEFT JOIN GradeDetails
                             case "examineegroupid":
                                 int.TryParse(conditionalValues[i], out groupId);
                                 break;
-                            case "questionsetid":
-                                int.TryParse(conditionalValues[i], out setId);
-                                break;
                             case "questionsubjectid":
                                 int.TryParse(conditionalValues[i], out questionSubjectId);
                                 break;
