@@ -349,14 +349,14 @@ WHERE 1 = 1 ";
                 }
 
                 string query = @"
-                    SELECT 
-                           [Name]UserName
-      ,[FullName]
-      ,[Mobile] PhoneNumber
-      ,[EmailAddress]Email
-                    FROM Users
-                    WHERE IsActive = 1 AND IsArchive = 0
-                    ORDER BY Name
+                    SELECT  Id,
+		            [Name]UserName
+                    ,[FullName]
+                    ,[Mobile] PhoneNumber
+                    ,[EmailAddress]Email
+            FROM Users
+            WHERE IsActive = 1 AND IsArchive = 0
+            ORDER BY Name
                     ";
 
                 query = ApplyConditions(query, conditionalFields, conditionalValues, false);
@@ -370,6 +370,7 @@ WHERE 1 = 1 ";
 
                 var modelList = dataTable.AsEnumerable().Select(row => new UserProfileVM
                 {
+                    Id = row["Id"].ToString(),
                     UserName = row["UserName"]?.ToString(),
                     FullName = row["FullName"]?.ToString(),
                     Email = row["Email"]?.ToString(),

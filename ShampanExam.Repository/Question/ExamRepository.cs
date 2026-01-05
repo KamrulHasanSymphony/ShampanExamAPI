@@ -88,11 +88,11 @@ namespace ShampanExam.Repository.Question
                 string query = @"
                 INSERT INTO AutomatedExamDetails
                 (
-                    AutomatedExamId
-      ,SubjectId
-      ,NumberOfQuestion
-      ,QuestionType
-      ,QuestionMark
+                       AutomatedExamId
+                      ,SubjectId
+                      ,NumberOfQuestion
+                      ,QuestionType
+                      ,QuestionMark
                 )
                 VALUES
                 (
@@ -848,7 +848,7 @@ LEFT JOIN GradeDetails
         -- Count
         SELECT COUNT(DISTINCT H.Id) AS totalcount
         FROM Exams H
-        WHERE H.IsArchive != 1
+        WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId != 0
         " + (options.filter.Filters.Count > 0
                         ? " AND (" + GridQueryBuilder<ExamVM>.FilterCondition(options.filter) + ")"
                         : "") + @"
@@ -878,7 +878,7 @@ LEFT JOIN GradeDetails
                    ISNULL(H.LastUpdateBy, '') AS LastUpdateBy,
                    ISNULL(FORMAT(H.LastUpdateAt, 'yyyy-MM-dd HH:mm'), '') AS LastUpdateAt
             FROM Exams H
-            WHERE H.IsArchive != 1
+            WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId != 0
             " + (options.filter.Filters.Count > 0
                             ? " AND (" + GridQueryBuilder<ExamVM>.FilterCondition(options.filter) + ")"
                             : "") + @"
@@ -969,6 +969,79 @@ LEFT JOIN GradeDetails
 
             return result;
         }
+
+        public async Task<ResultVM> GetUserRandomProcessedData(
+    string[] conditionalFields,
+    string[] conditionalValues,
+    PeramModel vm,
+    SqlConnection conn,
+    SqlTransaction transaction)
+        {
+            var result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            try
+            {
+                // Default values
+                int examId = 0, questionSubjectId = 0, noOfQuestion = 0;
+                string questionType = null;
+
+                // Map conditional fields
+                if (conditionalFields != null && conditionalValues != null)
+                {
+                    for (int i = 0; i < conditionalFields.Length; i++)
+                    {
+                        switch (conditionalFields[i].ToLower())
+                        {
+                            case "examid":
+                                int.TryParse(conditionalValues[i], out examId);
+                                break;
+                            case "questionsubjectid":
+                                int.TryParse(conditionalValues[i], out questionSubjectId);
+                                break;
+                            case "questiontype":
+                                questionType = conditionalValues[i];
+                                break;
+                            case "noofquestion":
+                                int.TryParse(conditionalValues[i], out noOfQuestion);
+                                break;
+                        }
+                    }
+                }
+
+                // Optional validation
+                //if (examId <= 0) return new ResultVM { Status = "Fail", Message = "ExamId not found." };
+                //if (questionSubjectId <= 0) return new ResultVM { Status = "Fail", Message = "QuestionSubjectId not found." };
+                //if (string.IsNullOrEmpty(questionType)) return new ResultVM { Status = "Fail", Message = "QuestionType not found." };
+                //if (noOfQuestion <= 0) return new ResultVM { Status = "Fail", Message = "NoOfQuestion not found." };
+
+                // Execute stored procedure
+                using (var cmd = new SqlCommand("InsertUserRandomExamQuestionHeaders", conn, transaction))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@ExamId", examId);
+                    cmd.Parameters.AddWithValue("@QuestionSubjectId", questionSubjectId);
+                    cmd.Parameters.AddWithValue("@QuestionType", (object)questionType ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@NoOfQuestion", noOfQuestion);
+
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Return success
+                result.Status = "Success";
+                result.Message = "Exam data processed successfully.";
+                result.DataVM = new { ExamId = examId }; // return useful data instead of ResultVM itself
+            }
+            catch (Exception ex)
+            {
+                result.Status = "Fail";
+                result.Message = "Error occurred while processing exam data.";
+                result.ExMessage = ex.Message;
+            }
+
+            return result;
+        }
+
 
         //public async Task<ResultVM> GetRandomProcessedData(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
         //{

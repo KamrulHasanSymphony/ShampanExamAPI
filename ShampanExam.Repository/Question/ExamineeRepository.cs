@@ -27,11 +27,11 @@ namespace ShampanExam.Repository.Question
                 string query = @"
                 INSERT INTO Examinees
                 (
-                    ExamineeGroupId, Name, MobileNo,IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt
+                    ExamineeGroupId, Name, MobileNo,LogInId,IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt
                 )
                 VALUES
                 (
-                    @ExamineeGroupId, @Name, @MobileNo,  @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE()
+                    @ExamineeGroupId, @Name, @MobileNo,@LogInId, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE()
                 );
                 SELECT SCOPE_IDENTITY();";
 
@@ -40,6 +40,8 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@ExamineeGroupId", vm.ExamineeGroupId);
                     cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@MobileNo", vm.MobileNo ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@LogInId", vm.LogInId);
+
                     cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
                     cmd.Parameters.AddWithValue("@IsArchive", vm.IsArchive);
                     cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
