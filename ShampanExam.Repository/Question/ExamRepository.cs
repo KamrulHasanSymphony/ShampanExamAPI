@@ -970,22 +970,16 @@ LEFT JOIN GradeDetails
             return result;
         }
 
-        public async Task<ResultVM> GetUserRandomProcessedData(
-    string[] conditionalFields,
-    string[] conditionalValues,
-    PeramModel vm,
-    SqlConnection conn,
-    SqlTransaction transaction)
+        public async Task<ResultVM> GetUserRandomProcessedData(string[] conditionalFields,string[] conditionalValues,PeramModel vm,SqlConnection conn,SqlTransaction transaction)
         {
             var result = new ResultVM { Status = "Fail", Message = "Error" };
 
             try
             {
-                // Default values
                 int examId = 0, questionSubjectId = 0, noOfQuestion = 0;
                 string questionType = null;
+                string userId = null;
 
-                // Map conditional fields
                 if (conditionalFields != null && conditionalValues != null)
                 {
                     for (int i = 0; i < conditionalFields.Length; i++)
@@ -995,52 +989,57 @@ LEFT JOIN GradeDetails
                             case "examid":
                                 int.TryParse(conditionalValues[i], out examId);
                                 break;
+
                             case "questionsubjectid":
                                 int.TryParse(conditionalValues[i], out questionSubjectId);
                                 break;
+
                             case "questiontype":
                                 questionType = conditionalValues[i];
                                 break;
+
                             case "noofquestion":
                                 int.TryParse(conditionalValues[i], out noOfQuestion);
+                                break;
+
+                            case "userid":
+                                userId = conditionalValues[i];
                                 break;
                         }
                     }
                 }
 
-                // Optional validation
-                //if (examId <= 0) return new ResultVM { Status = "Fail", Message = "ExamId not found." };
-                //if (questionSubjectId <= 0) return new ResultVM { Status = "Fail", Message = "QuestionSubjectId not found." };
-                //if (string.IsNullOrEmpty(questionType)) return new ResultVM { Status = "Fail", Message = "QuestionType not found." };
-                //if (noOfQuestion <= 0) return new ResultVM { Status = "Fail", Message = "NoOfQuestion not found." };
+                if (string.IsNullOrEmpty(userId))
+                    return new ResultVM { Status = "Fail", Message = "UserId not found." };
 
-                // Execute stored procedure
                 using (var cmd = new SqlCommand("InsertUserRandomExamQuestionHeaders", conn, transaction))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
 
                     cmd.Parameters.AddWithValue("@ExamId", examId);
                     cmd.Parameters.AddWithValue("@QuestionSubjectId", questionSubjectId);
-                    cmd.Parameters.AddWithValue("@QuestionType", (object)questionType ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@QuestionType", questionType);
                     cmd.Parameters.AddWithValue("@NoOfQuestion", noOfQuestion);
+                    cmd.Parameters.AddWithValue("@UserId", userId);
 
                     await cmd.ExecuteNonQueryAsync();
                 }
 
-                // Return success
                 result.Status = "Success";
                 result.Message = "Exam data processed successfully.";
-                result.DataVM = new { ExamId = examId }; // return useful data instead of ResultVM itself
+                result.DataVM = new { ExamId = examId, UserId = userId };
             }
             catch (Exception ex)
             {
                 result.Status = "Fail";
-                result.Message = "Error occurred while processing exam data.";
-                result.ExMessage = ex.Message;
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
             }
 
             return result;
         }
+
+
 
 
         //public async Task<ResultVM> GetRandomProcessedData(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
@@ -1142,14 +1141,16 @@ LEFT JOIN GradeDetails
                     string sqlQuery = @"
         -- Count
         SELECT COUNT(DISTINCT H.Id) AS totalcount
-        from AutomatedExamDetails D
-        LEFT OUTER JOIN Exams H ON D.AutomatedExamId = H.Id
-        LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
+                    from AutomatedExamDetails D
+                    LEFT OUTER JOIN Exams H ON D.AutomatedExamId = H.Id
+                    LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
+                    LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
+		            LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
         WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 ";
 
                     if (!string.IsNullOrEmpty(options.vm.UserId))
                     {
-                        sqlQuery += " AND H.CreatedBy = '" + options.vm.UserId.Replace("'", "''") + "'";
+                        sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
                     }
                     sqlQuery += @"
            -- Data
@@ -1166,12 +1167,14 @@ LEFT JOIN GradeDetails
                     from AutomatedExamDetails D
                     LEFT OUTER JOIN Exams H ON D.AutomatedExamId = H.Id
                     LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
+                    LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
+		            LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
             WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 
         
         ";
                     if (!string.IsNullOrEmpty(options.vm.UserId))
                     {
-                        sqlQuery += " AND H.CreatedBy = '" + options.vm.UserId.Replace("'", "''") + "'";
+                        sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
                     }
 
                     data = KendoGrid<AutomatedExamDetailsVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
