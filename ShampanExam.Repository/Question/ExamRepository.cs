@@ -1128,5 +1128,133 @@ LEFT JOIN GradeDetails
         //    return result;
         //}
 
+        public async Task<ResultVM> GetRandomGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+
+                var data = new GridEntity<AutomatedExamDetailsVM>();
+                if (options.vm.UserId != "" || options.vm.UserId != null)
+                {
+                    string sqlQuery = @"
+        -- Count
+        SELECT COUNT(DISTINCT H.Id) AS totalcount
+        from AutomatedExamDetails D
+        LEFT OUTER JOIN Exams H ON D.AutomatedExamId = H.Id
+        LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
+        WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 ";
+
+                    if (!string.IsNullOrEmpty(options.vm.UserId))
+                    {
+                        sqlQuery += " AND H.CreatedBy = '" + options.vm.UserId.Replace("'", "''") + "'";
+                    }
+                    sqlQuery += @"
+           -- Data
+      
+            SELECT
+                    ISNULL(H.Id,0)Id,
+                    ISNULL(H.Code,'') ExamCode,
+                    ISNULL(D.SubjectId,0) SubjectId,
+                    ISNULL(S.Name,'') SubjectName,
+                    ISNULL(D.NumberOfQuestion,0) NumberOfQuestion,
+                    ISNULL(D.QuestionType,'') QuestionType,
+                    ISNULL(D.QuestionMark,0) QuestionMark
+
+                    from AutomatedExamDetails D
+                    LEFT OUTER JOIN Exams H ON D.AutomatedExamId = H.Id
+                    LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
+            WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 
+        
+        ";
+                    if (!string.IsNullOrEmpty(options.vm.UserId))
+                    {
+                        sqlQuery += " AND H.CreatedBy = '" + options.vm.UserId.Replace("'", "''") + "'";
+                    }
+
+                    data = KendoGrid<AutomatedExamDetailsVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+                }
+                result.Status = "Success";
+                result.Message = "Exams grid data retrieved successfully.";
+                result.DataVM = data;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
+
+        //public async Task<ResultVM> GetRandomGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
+        //{
+        //    ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+        //    try
+        //    {
+        //        if (conn == null) throw new Exception("Database connection failed!");
+
+        //        var data = new GridEntity<ExamVM>();
+
+        //        string sqlQuery = @"
+        //-- Count
+        //SELECT COUNT(DISTINCT H.Id) AS totalcount
+        //FROM Exams H
+        //WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 
+        //" + (options.filter.Filters.Count > 0
+        //                ? " AND (" + GridQueryBuilder<ExamVM>.FilterCondition(options.filter) + ")"
+        //                : "") + @"
+
+        //-- Data
+        //SELECT *
+        //FROM (
+        //    SELECT ROW_NUMBER() OVER(ORDER BY " +
+        //                (options.sort.Count > 0
+        //                    ? "H." + options.sort[0].field + " " + options.sort[0].dir
+        //                    : "H.Id DESC") + @") AS rowindex,
+        //           ISNULL(H.Id,0) AS Id,
+        //           ISNULL(H.Code, '') AS Code,
+        //           ISNULL(H.Name, '') AS Name,
+        //           ISNULL(H.Date, '') AS Date,
+        //           ISNULL(H.Time, '') AS Time,
+        //           ISNULL(H.Duration, 0) AS Duration,
+        //           ISNULL(H.TotalMark, 0) AS TotalMark,
+        //           ISNULL(H.GradeId, 0) AS GradeId,
+        //           ISNULL(H.Remarks, '') AS Remarks,
+        //           ISNULL(H.IsExamByQuestionSet, 0) AS IsExamByQuestionSet,
+        //           ISNULL(H.QuestionSetId, 0) AS QuestionSetId,
+        //           ISNULL(H.ExamineeGroupId, 0) AS ExamineeGroupId,
+        //           CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status,
+        //           ISNULL(H.CreatedBy, '') AS CreatedBy,
+        //           ISNULL(FORMAT(H.CreatedAt, 'yyyy-MM-dd HH:mm'), '') AS CreatedAt,
+        //           ISNULL(H.LastUpdateBy, '') AS LastUpdateBy,
+        //           ISNULL(FORMAT(H.LastUpdateAt, 'yyyy-MM-dd HH:mm'), '') AS LastUpdateAt
+        //    FROM Exams H
+        //    WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 
+        //    " + (options.filter.Filters.Count > 0
+        //                    ? " AND (" + GridQueryBuilder<ExamVM>.FilterCondition(options.filter) + ")"
+        //                    : "") + @"
+        //) AS a
+        //WHERE rowindex > @skip AND (@take = 0 OR rowindex <= @take)";
+
+        //        data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(options, sqlQuery, "H.Id");
+
+        //        result.Status = "Success";
+        //        result.Message = "Exams grid data retrieved successfully.";
+        //        result.DataVM = data;
+
+        //        return result;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Message = ex.Message;
+        //        result.ExMessage = ex.ToString();
+        //        return result;
+        //    }
+        //}
     }
 }

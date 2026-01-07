@@ -547,5 +547,44 @@ namespace ShampanExam.Service.Question
                 if (isNewConnection && conn != null) conn.Close();
             }
         }
+
+        // GetGridData Method
+        public async Task<ResultVM> GetRandomGridData(GridOptions options)
+        {
+            ExamRepository _repo = new ExamRepository();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            bool isNewConnection = false;
+            SqlConnection conn = null;
+            SqlTransaction transaction = null;
+
+            try
+            {
+                conn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
+                conn.Open();
+                isNewConnection = true;
+                transaction = conn.BeginTransaction();
+
+                result = await _repo.GetRandomGridData(options, conn, transaction);
+
+                if (isNewConnection && result.Status == "Success")
+                    transaction.Commit();
+                else
+                    throw new Exception(result.Message);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                if (transaction != null && isNewConnection) transaction.Rollback();
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+            finally
+            {
+                if (isNewConnection && conn != null) conn.Close();
+            }
+        }
     }
 }

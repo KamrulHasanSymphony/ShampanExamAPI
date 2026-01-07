@@ -324,5 +324,21 @@ namespace ShampanExamAPI.Controllers.Question
                 });
             }
         }
+
+        [HttpPost("GetRandomGridData")]
+        public async Task<ResultVM> GetRandomGridData(GridOptions options)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
+            try
+            {
+                _examService = new ExamService();
+                resultVM = await _examService.GetRandomGridData(options);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message };
+            }
+        }
     }
 }
