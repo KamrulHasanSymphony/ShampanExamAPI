@@ -23,8 +23,8 @@ namespace ShampanExam.ViewModel.QuestionVM
         public string? ExamineeName { get; set; }
         public bool IsExamMarksSubmitted { get; set; }
         public int? BranchId { get; set; }
+        public string? ExamType { get; set; }
 
-        
         public List<ExamExamineeVM> examExamineeList { get; set; }
         public List<AutomatedExamDetailsVM> automatedExamDetailList { get; set; }
 

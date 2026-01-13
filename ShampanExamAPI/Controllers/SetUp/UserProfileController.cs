@@ -174,6 +174,27 @@ namespace ShampanExamAPI.Controllers.SetUp
             }
         }
 
-
+        // POST: api/UserProfile/UserListByUserName
+        [HttpPost("UserListByUserName")]
+        public async Task<ResultVM> UserListByUserName(CommonUser vm)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+            try
+            {
+                _service = new UserProfileService();
+                resultVM = await _service.UserListByUserName(new[] { "U.UserName" }, new[] { vm.UserName }, null);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.Message,
+                    DataVM = null
+                };
+            }
+        }
     }
 }

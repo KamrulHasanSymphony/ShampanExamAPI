@@ -21,6 +21,7 @@ namespace ShampanExam.ViewModel.AccountVMs
         public string? dbName { get; set; }
         
         public int? CompanyId { get; set; }
+        //public int? TypeId { get; set; }
         public string? CompanyName { get; set; }
         public string? CompanyDatabase { get; set; }
 

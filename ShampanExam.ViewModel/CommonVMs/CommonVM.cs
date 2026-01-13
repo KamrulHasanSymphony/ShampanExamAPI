@@ -25,6 +25,8 @@
         public string? QuestionType { get; set; }
         public string? NoOfQuestion { get; set; }
         public string? ExamineeId { get; set; }
+        public string? ExamId { get; set; }
+        public string? UserName { get; set; }
 
         public string[] ConditionalFields { get; set; } = Array.Empty<string>();
         public string[] ConditionalValues { get; set; } = Array.Empty<string>();

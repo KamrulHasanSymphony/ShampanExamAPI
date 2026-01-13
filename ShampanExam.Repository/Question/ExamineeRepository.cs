@@ -401,7 +401,7 @@ namespace ShampanExam.Repository.Question
         FROM Exams H
 left outer join ExamQuestionHeaders EQ on H.id=EQ.ExamId
 
-        WHERE H.IsArchive != 1";
+        WHERE H.IsArchive != 1 AND( H.ExamType != 'Mock' OR H.ExamType is null)";
 
                     if (options.vm != null && Convert.ToInt32(options.vm.Id) > 0)
                     {
@@ -427,7 +427,7 @@ left outer join ExamQuestionHeaders EQ on H.id=EQ.ExamId
 FROM Exams H
 left outer join ExamQuestionHeaders EQ on H.id=EQ.ExamId
 left outer join Examinees E on E.id=EQ.ExamineeId
-WHERE H.IsArchive != 1
+WHERE H.IsArchive != 1 AND( H.ExamType != 'Mock' OR H.ExamType is null)
         
         ";
                     if (options.vm != null && Convert.ToInt32(options.vm.Id) > 0)

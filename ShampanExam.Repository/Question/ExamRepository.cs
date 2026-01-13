@@ -31,12 +31,12 @@ namespace ShampanExam.Repository.Question
                 INSERT INTO Exams
                 (
                     Code, Name, Date, Time, Duration, TotalMark, GradeId, Remarks, IsExamByQuestionSet, 
-                    QuestionSetId, ExamineeGroupId, IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt
+                    QuestionSetId, ExamineeGroupId,ExamType, IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt
                 )
                 VALUES
                 (
                     @Code, @Name, @Date, @Time, @Duration, @TotalMark, @GradeId, @Remarks, @IsExamByQuestionSet, 
-                    @QuestionSetId, @ExamineeGroupId, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE()
+                    @QuestionSetId, @ExamineeGroupId,@ExamType, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE()
                 );
                 SELECT SCOPE_IDENTITY();";
 
@@ -53,6 +53,8 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@IsExamByQuestionSet", vm.IsExamByQuestionSet);
                     cmd.Parameters.AddWithValue("@QuestionSetId", vm.QuestionSetId ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@ExamineeGroupId", vm.ExamineeGroupId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ExamType", vm.ExamType ?? (object)DBNull.Value);
+
                     cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
                     cmd.Parameters.AddWithValue("@IsArchive", vm.IsArchive);
                     cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
@@ -1146,7 +1148,7 @@ LEFT JOIN GradeDetails
                     LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
                     LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
 		            LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
-        WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 ";
+        WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 AND( H.ExamType = 'Mock' OR H.ExamType is Not null)";
 
                     if (!string.IsNullOrEmpty(options.vm.UserId))
                     {
@@ -1157,6 +1159,7 @@ LEFT JOIN GradeDetails
       
             SELECT
                     ISNULL(H.Id,0)Id,
+                    ISNULL(E.ExamineeId,0)ExamineeId,
                     ISNULL(H.Code,'') ExamCode,
                     ISNULL(D.SubjectId,0) SubjectId,
                     ISNULL(S.Name,'') SubjectName,
@@ -1169,7 +1172,7 @@ LEFT JOIN GradeDetails
                     LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
                     LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
 		            LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
-            WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 
+            WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 AND( H.ExamType = 'Mock' OR H.ExamType is Not null)
         
         ";
                     if (!string.IsNullOrEmpty(options.vm.UserId))

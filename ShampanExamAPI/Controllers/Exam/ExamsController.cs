@@ -84,7 +84,7 @@ namespace ShampanExamAPI.Controllers.Exam
 
             try
             {
-                result = await _examService.QuestionAnsList(new[] { "M.ExamineeId" }, new[] { vm.Id }, null);
+                result = await _examService.QuestionAnsList(new[] { "M.ExamineeId", "M.ExamId" }, new[] { vm.Id, vm.ExamId }, null);
                 return result;
             }
             catch (System.Exception ex)
@@ -99,6 +99,26 @@ namespace ShampanExamAPI.Controllers.Exam
             }
         }
 
+        [HttpPost("QuestionAnsListSelf")]
+        public async Task<ResultVM> QuestionAnsListSelf(CommonVM vm)
+        {
+            var result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
 
+            try
+            {
+                result = await _examService.QuestionAnsList(new[] { "M.ExamineeId", "M.ExamId" }, new[] { vm.Id,vm.ExamId }, null);
+                return result;
+            }
+            catch (System.Exception ex)
+            {
+                return new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.Message,
+                    DataVM = vm
+                };
+            }
+        }
     }
 }

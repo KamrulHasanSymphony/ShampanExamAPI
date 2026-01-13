@@ -10,6 +10,7 @@ namespace ShampanExam.ViewModel.QuestionVM
     {
         public int Id { get; set; }
         public int? AutomatedExamId { get; set; }
+        public int? ExamineeId { get; set; }
         public int? SubjectId { get; set; }
         public int? NumberOfQuestion { get; set; }
         public string? QuestionType { get; set; }

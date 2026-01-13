@@ -459,6 +459,91 @@ WHERE 1 = 1 ";
             }
         }
 
+        public async Task<ResultVM> UserListByUserName(string[] conditionalFields, string[] conditionalValues, CommonUser vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
+        {
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+
+            try
+            {
+                if (conn == null)
+                {
+                    throw new Exception("Database connection fail!");
+                }
+
+
+                string query = $@"
+SELECT 
+ U.Id 
+,U.UserName
+,U.FullName
+,U.Email
+,U.PhoneNumber
+,U.PasswordHash
+,U.NormalizedPassword
+,ISNULL(U.IsHeadOffice,0) IsHeadOffice
+,SP.TypeId
+,R.Name Type
+
+FROM 
+[{DatabaseHelper.AuthDbName()}].[dbo].AspNetUsers AS U
+ LEFT OUTER JOIN [{DatabaseHelper.DBName()}].[dbo].Users SP ON ISNULL(U.UserId,0) = ISNULL(SP.Id,0)
+ LEFT OUTER JOIN [{DatabaseHelper.DBName()}].[dbo].Role R ON SP.TypeId = R.Id
+
+WHERE 1 = 1 ";
+
+                if (vm != null && !string.IsNullOrEmpty(vm.UserName))
+                {
+                    query += " AND U.UserName = @Id ";
+                }
+
+                // Apply additional conditions
+                query = ApplyConditions(query, conditionalFields, conditionalValues, false);
+
+                SqlDataAdapter objComm = CreateAdapter(query, conn, transaction);
+
+                // SET additional conditions param
+                objComm.SelectCommand = ApplyParameters(objComm.SelectCommand, conditionalFields, conditionalValues);
+
+                if (vm != null && !string.IsNullOrEmpty(vm.UserName))
+                {
+                    objComm.SelectCommand.Parameters.AddWithValue("@Id", vm.UserName);
+                }
+
+                objComm.Fill(dataTable);
+
+                var modelList = dataTable.AsEnumerable().Select(row => new UserProfileVM
+                {
+                    Id = row["Id"].ToString(),
+                    TypeId = row["TypeId"] == DBNull.Value ? 0 : Convert.ToInt32(row["TypeId"]),
+                    UserName = row["UserName"].ToString(),
+                    FullName = row["FullName"].ToString(),
+                    IsHeadOffice = Convert.ToBoolean(row["IsHeadOffice"]),
+                    Email = row["Email"].ToString(),
+                    PhoneNumber = row["PhoneNumber"].ToString(),
+                    Password = row["NormalizedPassword"].ToString(),
+                    ConfirmPassword = row["NormalizedPassword"].ToString(),
+                    CurrentPassword = row["NormalizedPassword"].ToString(),
+                    NormalizedPassword = row["NormalizedPassword"].ToString(),
+                    Type = row["Type"].ToString()
+                }).ToList();
+
+                result.Status = "Success";
+                result.Message = "Data retrieved successfully.";
+                result.DataVM = modelList;
+
+                return result;
+
+            }
+            catch (Exception ex)
+            {
+                result.ExMessage = ex.Message;
+                result.Message = ex.Message;
+                return result;
+            }
+        }
+
+
     }
 
 
