@@ -61,7 +61,7 @@ namespace ShampanExamAPI.Controllers.Examiner
 
             try
             {
-                result = await _examService.QuestionAnsList(new[] { "M.ExamineeId" }, new[] { vm.Id }, null);
+                result = await _examService.QuestionAnsList(new[] { "M.ExamineeId","M.ExamId" }, new[] { vm.Id,vm.ExamId }, null);
                 return result;
             }
             catch (System.Exception ex)
