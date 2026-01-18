@@ -489,7 +489,7 @@ namespace ShampanExam.Repository.Exam
                 string query = @"
                 UPDATE ExamQuestionHeaders 
                 SET 
-                    IsExamSubmitted = @IsExamSubmitted
+                    IsExamSubmitted = 1
                     
                 WHERE ExamineeId = @ExamineeId and ExamId=@ExamId";
 
@@ -497,7 +497,7 @@ namespace ShampanExam.Repository.Exam
                 {
                     cmd.Parameters.AddWithValue("@ExamineeId", vm.ExamineeId);
                     cmd.Parameters.AddWithValue("@ExamId", vm.ExamId);
-                    cmd.Parameters.AddWithValue("@IsExamSubmitted", true);
+                    cmd.Parameters.AddWithValue("@IsExamSubmitted", 1);
 
 
                     int rows = cmd.ExecuteNonQuery();

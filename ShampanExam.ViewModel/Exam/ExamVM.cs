@@ -32,11 +32,13 @@ namespace ShampanExam.ViewModel.Exam
         // For Text questions
         public string? CorrectAnswer { get; set; }
         public int? QuestionHeaderId { get; set; }
+        public int? QuestionSetHeaderId { get; set; }
 
         // User's selected answer(s)
         public string? UserAnswer { get; set; }
         public List<int> SelectedOptionIds { get; set; } = new List<int>();
         public bool IsExamSubmitted { get; set; }
+        public string? Name { get; set; }
 
     }
 

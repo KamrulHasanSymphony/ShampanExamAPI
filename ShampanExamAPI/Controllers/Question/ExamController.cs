@@ -122,7 +122,7 @@ namespace ShampanExamAPI.Controllers.Question
             {
                 _examService = new ExamService();
 
-                var result = await _examService.GetProcessedData(new[] { "Id", "ExamineeGroupId", "QuestionSetId" }, new[] { vm.Id,vm.Group,vm.Value }, null);
+                var result = await _examService.GetProcessedData(new[] { "Id", "ExamineeGroupId", "QuestionSetId" }, new[] { vm.Id, vm.Group, vm.Value }, null);
 
                 if (result.Status == "Success")
                 {
@@ -258,5 +258,87 @@ namespace ShampanExamAPI.Controllers.Question
         //        throw new Exception($"Error generating report: {ex.Message}");
         //    }
         //}
+
+        // POST: api/Exam/GetRandomProcessedData
+        [HttpPost("GetRandomProcessedData")]
+        public async Task<IActionResult> GetRandomProcessedData([FromBody] CommonVM vm)
+        {
+            try
+            {
+                _examService = new ExamService();
+
+                var result = await _examService.GetRandomProcessedData(new[] { "Id", "ExamineeGroupId", "QuestionSubjectId", "QuestionType", "NoOfQuestion" }, new[] { vm.Id, vm.Group, vm.QuestionSubjectId, vm.QuestionType, vm.NoOfQuestion }, null);
+
+                if (result.Status == "Success")
+                {
+                    var resultList = await _examService.ListOfProcessedData(new[] { "Id" }, new[] { vm.Id }, null);
+
+                    return Ok(resultList);
+                }
+                else
+                {
+                    return Ok(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.ToString(),
+                    DataVM = vm
+                });
+            }
+        }
+
+        // POST: api/Exam/GetUserRandomProcessedData
+        [HttpPost("GetUserRandomProcessedData")]
+        public async Task<IActionResult> GetUserRandomProcessedData([FromBody] CommonVM vm)
+        {
+            try
+            {
+                _examService = new ExamService();
+
+                var result = await _examService.GetUserRandomProcessedData(new[] { "ExamId", "QuestionSubjectId", "QuestionType", "NoOfQuestion", "UserId" }, new[] { vm.Id,vm.QuestionSubjectId, vm.QuestionType, vm.NoOfQuestion,vm.UserId }, null);
+
+                if (result.Status == "Success")
+                {
+                    var resultList = await _examService.ListOfProcessedData(new[] { "Id" }, new[] { vm.Id }, null);
+
+                    return Ok(resultList);
+                }
+                else
+                {
+                    return Ok(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.ToString(),
+                    DataVM = vm
+                });
+            }
+        }
+
+        [HttpPost("GetRandomGridData")]
+        public async Task<ResultVM> GetRandomGridData(GridOptions options)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
+            try
+            {
+                _examService = new ExamService();
+                resultVM = await _examService.GetRandomGridData(options);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message };
+            }
+        }
     }
 }

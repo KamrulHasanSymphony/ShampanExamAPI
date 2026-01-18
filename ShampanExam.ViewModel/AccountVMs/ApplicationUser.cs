@@ -13,6 +13,8 @@ namespace ShampanExam.ViewModel.AccountVMs
         public string NormalizedEmail { get; set; }
         public bool IsHeadOffice { get; set; }
         public int? UserId { get; set; }
+        //public int? TypeId { get; set; }
+
 
         [StringLength(256)]
         public string NormalizedPassword { get; set; }
