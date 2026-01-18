@@ -1,8 +1,10 @@
 ﻿using Newtonsoft.Json;
 using ShampanExam.Repository.Common;
 using ShampanExam.ViewModel.CommonVMs;
+using ShampanExam.ViewModel.Exam;
 using ShampanExam.ViewModel.KendoCommon;
 using ShampanExam.ViewModel.QuestionVM;
+using ShampanExam.ViewModel.Utility;
 using ShampanTailor.ViewModel.QuestionVM;
 using System;
 using System.Data;
@@ -363,5 +365,89 @@ namespace ShampanExam.Repository.Question
             }
         }
 
+        public async Task<ResultVM> GetQuestionGridData(GridOptions options, string[] conditionalFields, string[] conditionalValues, SqlConnection conn, SqlTransaction transaction)
+        {
+            bool isNewConnection = false;
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+
+            try
+            {
+                if (conn == null)
+                {
+                    conn = new SqlConnection(DatabaseHelper.GetConnectionString());
+                    conn.Open();
+                    isNewConnection = true;
+                }
+
+                var data = new GridEntity<QuestionVM>();
+
+                // Define your SQL query string
+                string sqlQuery = $@"
+                    -- Count query
+                    SELECT COUNT(DISTINCT QD.Id) AS totalcount
+                    from 
+                    QuestionSetDetails QD
+                    LEFT OUTER JOIN QuestionSetHeaders QS ON QD.QuestionSetHeaderId = QS.Id
+                    LEFT OUTER JOIN QuestionHeaders QH ON QD.QuestionHeaderId = QH.Id 
+                    Where 1=1
+            -- Add the filter condition
+                " + (options.filter.Filters.Count > 0 ? " AND (" + GridQueryBuilder<QuestionVM>.FilterCondition(options.filter) + ")" : "");
+
+                // Apply additional conditions
+                sqlQuery = ApplyConditions(sqlQuery, conditionalFields, conditionalValues, false);
+
+                sqlQuery += @"
+            -- Data query with pagination and sorting
+            SELECT * 
+            FROM (
+                SELECT 
+                ROW_NUMBER() OVER(ORDER BY " + (options.sort.Count > 0 ? options.sort[0].field + " " + options.sort[0].dir : "QD.Id ASC") + $@") AS rowindex,
+                    QD.Id,
+                    QD.QuestionSetHeaderId,
+                    QS.Name,
+                    QH.QuestionText,
+                    QH.QuestionType,
+                    QH.QuestionMark
+                    from 
+                    QuestionSetDetails QD
+                    LEFT OUTER JOIN QuestionSetHeaders QS ON QD.QuestionSetHeaderId = QS.Id
+                    LEFT OUTER JOIN QuestionHeaders QH ON QD.QuestionHeaderId = QH.Id
+                     WHERE 1= 1
+
+
+            -- Add the filter condition
+                " + (options.filter.Filters.Count > 0 ? " AND (" + GridQueryBuilder<QuestionVM>.FilterCondition(options.filter) + ")" : "");
+
+                // Apply additional conditions
+                sqlQuery = ApplyConditions(sqlQuery, conditionalFields, conditionalValues, false);
+
+                sqlQuery += @"
+            ) AS a
+            WHERE rowindex > @skip AND (@take = 0 OR rowindex <= @take)
+        ";
+
+                data = KendoGrid<QuestionVM>.GetTransactionalGridData_CMD(options, sqlQuery, "QD.Id", conditionalFields, conditionalValues);
+
+                result.Status = "Success";
+                result.Message = "Data retrieved successfully.";
+                result.DataVM = data;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.ExMessage = ex.Message;
+                result.Message = ex.Message;
+                return result;
+            }
+            finally
+            {
+                if (isNewConnection && conn != null)
+                {
+                    conn.Close();
+                }
+            }
+        }
     }
 }

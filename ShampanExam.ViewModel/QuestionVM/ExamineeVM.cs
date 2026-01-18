@@ -6,6 +6,8 @@ namespace ShampanExam.ViewModel.QuestionVM
     public class ExamineeVM : AuditVM
     {
         public long Id { get; set; }
+        public long? ExamineeId { get; set; }
+
         public int? ExamineeGroupId { get; set; }
         public string? Name { get; set; }
         public string? MobileNo { get; set; }

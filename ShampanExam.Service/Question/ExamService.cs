@@ -17,6 +17,7 @@ namespace ShampanExam.Service.Question
         CommonRepository _commonRepo = new CommonRepository();
 
         // Insert Method
+        // Insert Method
         public async Task<ResultVM> Insert(ExamVM exam)
         {
             string CodeGroup = "Exam";
@@ -24,16 +25,10 @@ namespace ShampanExam.Service.Question
             ExamRepository _repo = new ExamRepository();
             _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
-
             bool isNewConnection = false;
             SqlConnection conn = null;
             SqlTransaction transaction = null;
-            CommonVM commonVM = new CommonVM();
 
-            commonVM.Group = "Exam";
-            commonVM.Name = "Exam";
-
-            _commonRepo = new CommonRepository();
             try
             {
                 conn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
@@ -41,49 +36,59 @@ namespace ShampanExam.Service.Question
                 isNewConnection = true;
                 transaction = conn.BeginTransaction();
 
-
-
+                // Generate Exam Code
                 string code = _commonRepo.GenerateCode(CodeGroup, CodeName, exam.Date, exam.BranchId, conn, transaction);
+                if (string.IsNullOrEmpty(code))
+                    throw new Exception("Code Generation Failed!");
 
-                if (!string.IsNullOrEmpty(code))
+                exam.Code = code;
+
+                // 1. Insert Exam
+                result = await _repo.Insert(exam, conn, transaction);
+                if (result.Status != "Success") throw new Exception(result.Message);
+
+                int examId = Convert.ToInt32(result.Id);
+
+                // 2. Insert Exam Details
+                foreach (var item in exam.automatedExamDetailList)
                 {
-                    exam.Code = code;
+                    item.Id = examId;
+                    var detailResult = await _repo.DetailsInsert(item, conn, transaction);
+                    if (detailResult.Status != "Success") throw new Exception(detailResult.Message);
+                }
 
+                // 3. Insert Examinees and Questions
+                foreach (var examinee in exam.examExamineeList)
+                {
+                    examinee.ExamId = examId.ToString();
+                    examinee.CreatedBy = exam.CreatedBy;
+                    examinee.CreatedFrom = exam.CreatedFrom;
+                    var examineeResult = await _repo.ExamineeInsert(examinee, conn, transaction);
+                    if (examineeResult.Status != "Success") throw new Exception(examineeResult.Message);
 
-                    result = await _repo.Insert(exam, conn, transaction);
-                    if (result.Status == "Success")
+                    // Insert Questions for this Examinee
+                    foreach (var question in exam.examQuestionHeaderList)
                     {
-                        foreach (var item in exam.automatedExamDetailList)
-                        {
-                            item.Id = Convert.ToInt32(result.Id);
-                            var resultt = await _repo.DetailsInsert(item, conn, transaction);
-                            if (result.Status != "Success")
-                            {
-                                throw new Exception(resultt.Message);
-                            }
+                        question.ExamId = examId;
+                        question.ExamineeId = examinee.ExamineeId;
+                        question.QuestionSetId = exam.QuestionSetId;
 
-                        }
-                        if (isNewConnection && result.Status == "Success")
-                        {
-                            transaction.Commit();
-                        }
-                        else
-                        {
-                            throw new Exception(result.Message);
-                        }
-
+                        var questionResult = await _repo.QuestionInsert(question, conn, transaction);
+                        if (questionResult.Status != "Success") throw new Exception(questionResult.Message);
                     }
 
+                    // 4. Insert Option and Short Answer Details for this Examinee
+                    var detailsResult = await _repo.InsertExamQuestionDetails(examId, conn, transaction);
+                    if (detailsResult.Status != "Success") throw new Exception(detailsResult.Message);
                 }
-                else
-                {
-                    throw new Exception("Code Generation Failed!");
-                }
+
+                transaction.Commit();
                 return result;
             }
             catch (Exception ex)
             {
                 if (transaction != null && isNewConnection) transaction.Rollback();
+                result.Status = "Fail";
                 result.Message = ex.Message;
                 result.ExMessage = ex.ToString();
                 result.Code = exam.Code;
@@ -95,7 +100,113 @@ namespace ShampanExam.Service.Question
             }
         }
 
-        // Update Method
+        //public async Task<ResultVM> Insert(ExamVM exam)
+        //{
+        //    string CodeGroup = "Exam";
+        //    string CodeName = "Exam";
+        //    ExamRepository _repo = new ExamRepository();
+        //    _commonRepo = new CommonRepository();
+        //    ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+        //    bool isNewConnection = false;
+        //    SqlConnection conn = null;
+        //    SqlTransaction transaction = null;
+        //    CommonVM commonVM = new CommonVM();
+
+        //    commonVM.Group = "Exam";
+        //    commonVM.Name = "Exam";
+
+        //    _commonRepo = new CommonRepository();
+        //    try
+        //    {
+        //        conn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
+        //        conn.Open();
+        //        isNewConnection = true;
+        //        transaction = conn.BeginTransaction();
+
+
+
+        //        string code = _commonRepo.GenerateCode(CodeGroup, CodeName, exam.Date, exam.BranchId, conn, transaction);
+
+        //        if (!string.IsNullOrEmpty(code))
+        //        {
+        //            exam.Code = code;
+
+
+        //            result = await _repo.Insert(exam, conn, transaction);
+        //            if (result.Status == "Success")
+        //            {
+        //                foreach (var item in exam.automatedExamDetailList)
+        //                {
+        //                    item.Id = Convert.ToInt32(result.Id);
+        //                    var resultt = await _repo.DetailsInsert(item, conn, transaction);
+        //                    if (result.Status != "Success")
+        //                    {
+        //                        throw new Exception(resultt.Message);
+        //                    }
+
+        //                }
+        //                foreach (var examinee in exam.examExamineeList)
+        //                {
+        //                    //examinee.Id = Convert.ToInt32(result.Id);
+        //                    examinee.ExamId = result.Id;
+        //                    var examineeresult = await _repo.ExamineeInsert(examinee, conn, transaction);
+
+        //                    foreach (var question in exam.examQuestionHeaderList)
+        //                    {
+        //                        question.ExamId = Convert.ToInt32(result.Id);
+        //                        question.ExamineeId = examinee.ExamineeId;
+        //                        question.QuestionSetId = exam.QuestionSetId;
+        //                        //examinee.Id = Convert.ToInt32(result.Id);
+        //                        var questionresult = await _repo.QuestionInsert(question, conn, transaction);
+        //                        if (questionresult.Status != "Success")
+        //                        {
+        //                            throw new Exception(questionresult.Message);
+        //                        }
+
+        //                    }
+
+        //                    if (isNewConnection && result.Status == "Success")
+        //                    {
+        //                        transaction.Commit();
+        //                    }
+        //                    else
+        //                    {
+        //                        throw new Exception(result.Message);
+        //                    }
+        //                    if (examineeresult.Status != "Success")
+        //                    {
+        //                        throw new Exception(examineeresult.Message);
+        //                    }
+
+        //                }
+
+
+
+        //            }
+
+        //        }
+        //        else
+        //        {
+        //            throw new Exception("Code Generation Failed!");
+        //        }
+        //        return result;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        if (transaction != null && isNewConnection) transaction.Rollback();
+        //        result.Message = ex.Message;
+        //        result.ExMessage = ex.ToString();
+        //        result.Code = exam.Code;
+        //        return result;
+        //    }
+        //    finally
+        //    {
+        //        if (isNewConnection && conn != null) conn.Close();
+        //    }
+        //}
+
+        //Update Method
         public async Task<ResultVM> Update(ExamVM exam)
         {
             ExamRepository _repo = new ExamRepository();

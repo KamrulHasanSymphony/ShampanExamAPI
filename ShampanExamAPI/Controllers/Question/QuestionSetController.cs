@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ShampanExam.Service.Common;
+using ShampanExam.Service.Exam;
 using ShampanExam.Service.Grades;
 using ShampanExam.Service.Question;
 using ShampanExam.ViewModel.CommonVMs;
@@ -94,6 +95,35 @@ namespace ShampanExamAPI.Controllers.Question
                 {
                     Status = "Fail",
                     Message = "Data not fetched.",
+                    ExMessage = ex.Message,
+                    DataVM = null
+                };
+            }
+        }
+
+        //POST: api/QuestionSet/GetQuestionGridData
+        [HttpPost("GetQuestionGridData")]
+        public async Task<ResultVM> GetQuestionGridData([FromBody] examineeRequest request)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+
+            try
+            {
+                var options = request.Options;
+                var groupId = request.GroupId;
+                // Pass parameters to GetFromShadeGridData method
+                resultVM = await _questionSetHeaderService.GetQuestionGridData(
+                    options, new[] { "" }, new[] { "" }, groupId
+                );
+
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
                     ExMessage = ex.Message,
                     DataVM = null
                 };

@@ -279,7 +279,12 @@ namespace ShampanExam.ViewModel.KendoCommon
                     {
                         continue;
                     }
-                    field = conditionalFields[i].ToString().Split(".")[1];
+                    var parts = conditionalFields[i].Split('.');
+                    if (parts.Length < 2)
+                        continue;
+
+                    field = parts[1];
+                    //field = conditionalFields[i].ToString().Split(".")[1];
                     cField =  conditionalFields[i].ToString();
                     cField = cField.Replace(".", "").Replace(" between", "");
                     field = field.Replace(".", "").Replace(" between", "");
@@ -287,12 +292,13 @@ namespace ShampanExam.ViewModel.KendoCommon
 
                     if (conditionalFields[i].ToLower().Contains("date"))
                     {
-                        if (count == 1)
+                        if (count == 1 && i + 1 < conditionalValues.Length)
                         {
                             sqlQuery = sqlQuery.Replace("@" + field, "'" + conditionalValues[i + 1] + "'");
                         }
                         count++;
                     }
+
                 }
 
                 // Open SQL connection

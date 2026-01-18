@@ -93,7 +93,7 @@ namespace ShampanExamAPI.Controllers.Question
                     conditionValues = new string[] { vm.Name };
                 }
                 _examineeService = new ExamineeService();
-                resultVM = await _examineeService.List(  conditionFields , conditionValues, null);
+                resultVM = await _examineeService.List(conditionFields, conditionValues, null);
                 return resultVM;
             }
             catch (Exception ex)
@@ -257,6 +257,52 @@ namespace ShampanExamAPI.Controllers.Question
             catch (Exception ex)
             {
                 throw new Exception($"Error generating report: {ex.Message}");
+            }
+        }
+
+        [HttpPost("GetExameeSelflistGridData")]
+        public async Task<ResultVM> GetExameeSelflistGridData(GridOptions options)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
+            try
+            {
+                _examineeService = new ExamineeService();
+                resultVM = await _examineeService.GetExameeSelflistGridData(options);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message };
+            }
+        }
+
+        //POST: api/Examinee/GetExamineeGridData
+        [HttpPost("GetExamineeGridData")]
+        public async Task<ResultVM> GetExamineeGridData([FromBody] examineeRequest request)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+
+            try
+            {
+                var options = request.Options;
+                var groupId = request.GroupId;
+                _examineeService = new ExamineeService();
+                // Pass parameters to GetFromShadeGridData method
+                resultVM = await _examineeService.GetExamineeGridData(
+                    options, new[] { "" }, new[] { "" }, groupId
+                );
+
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.Message,
+                    DataVM = null
+                };
             }
         }
     }

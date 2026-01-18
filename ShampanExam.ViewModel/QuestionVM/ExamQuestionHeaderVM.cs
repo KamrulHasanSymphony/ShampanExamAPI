@@ -17,6 +17,7 @@ namespace ShampanExam.ViewModel.QuestionVM
         public string? QuestionType { get; set; }
         public int? QuestionMark { get; set; }
         public decimal? MarkObtain { get; set; }
+        public int? QuestionSetId { get; set; }
 
     }
 }

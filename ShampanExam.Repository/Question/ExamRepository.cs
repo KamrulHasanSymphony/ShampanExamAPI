@@ -1161,11 +1161,14 @@ LEFT JOIN GradeDetails
                     ISNULL(H.Id,0)Id,
                     ISNULL(E.ExamineeId,0)ExamineeId,
                     ISNULL(H.Code,'') ExamCode,
+                    ISNULL(H.Name,'') ExamName,
                     ISNULL(D.SubjectId,0) SubjectId,
                     ISNULL(S.Name,'') SubjectName,
                     ISNULL(D.NumberOfQuestion,0) NumberOfQuestion,
                     ISNULL(D.QuestionType,'') QuestionType,
-                    ISNULL(D.QuestionMark,0) QuestionMark
+                    ISNULL(D.QuestionMark,0) QuestionMark,
+                    ISNULL(H.ExamType,'') ExamType
+
 
                     from AutomatedExamDetails D
                     LEFT OUTER JOIN Exams H ON D.AutomatedExamId = H.Id
@@ -1196,71 +1199,204 @@ LEFT JOIN GradeDetails
             }
         }
 
-        //public async Task<ResultVM> GetRandomGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
-        //{
-        //    ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+        public async Task<ResultVM> ExamineeInsert(ExamExamineeVM examinee, SqlConnection conn, SqlTransaction transaction)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
-        //    try
-        //    {
-        //        if (conn == null) throw new Exception("Database connection failed!");
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+                if (transaction == null) transaction = conn.BeginTransaction();
 
-        //        var data = new GridEntity<ExamVM>();
+                string query = @"
+                 INSERT INTO ExamExaminees  (ExamId, ExamineeId, CreatedBy, CreatedFrom, CreatedAt)
+                VALUES
+                (@ExamId, @ExamineeId, @CreatedBy, @CreatedFrom, GETDATE());
+                SELECT SCOPE_IDENTITY();";
 
-        //        string sqlQuery = @"
-        //-- Count
-        //SELECT COUNT(DISTINCT H.Id) AS totalcount
-        //FROM Exams H
-        //WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 
-        //" + (options.filter.Filters.Count > 0
-        //                ? " AND (" + GridQueryBuilder<ExamVM>.FilterCondition(options.filter) + ")"
-        //                : "") + @"
+                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@ExamId", examinee.ExamId);
+                    cmd.Parameters.AddWithValue("@ExamineeId", examinee.ExamineeId);
+                    cmd.Parameters.AddWithValue("@CreatedBy", examinee.CreatedBy ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@CreatedFrom", examinee.CreatedFrom ?? (object)DBNull.Value);
+                    examinee.Id = Convert.ToInt32(cmd.ExecuteScalar());
+                }
 
-        //-- Data
-        //SELECT *
-        //FROM (
-        //    SELECT ROW_NUMBER() OVER(ORDER BY " +
-        //                (options.sort.Count > 0
-        //                    ? "H." + options.sort[0].field + " " + options.sort[0].dir
-        //                    : "H.Id DESC") + @") AS rowindex,
-        //           ISNULL(H.Id,0) AS Id,
-        //           ISNULL(H.Code, '') AS Code,
-        //           ISNULL(H.Name, '') AS Name,
-        //           ISNULL(H.Date, '') AS Date,
-        //           ISNULL(H.Time, '') AS Time,
-        //           ISNULL(H.Duration, 0) AS Duration,
-        //           ISNULL(H.TotalMark, 0) AS TotalMark,
-        //           ISNULL(H.GradeId, 0) AS GradeId,
-        //           ISNULL(H.Remarks, '') AS Remarks,
-        //           ISNULL(H.IsExamByQuestionSet, 0) AS IsExamByQuestionSet,
-        //           ISNULL(H.QuestionSetId, 0) AS QuestionSetId,
-        //           ISNULL(H.ExamineeGroupId, 0) AS ExamineeGroupId,
-        //           CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status,
-        //           ISNULL(H.CreatedBy, '') AS CreatedBy,
-        //           ISNULL(FORMAT(H.CreatedAt, 'yyyy-MM-dd HH:mm'), '') AS CreatedAt,
-        //           ISNULL(H.LastUpdateBy, '') AS LastUpdateBy,
-        //           ISNULL(FORMAT(H.LastUpdateAt, 'yyyy-MM-dd HH:mm'), '') AS LastUpdateAt
-        //    FROM Exams H
-        //    WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 
-        //    " + (options.filter.Filters.Count > 0
-        //                    ? " AND (" + GridQueryBuilder<ExamVM>.FilterCondition(options.filter) + ")"
-        //                    : "") + @"
-        //) AS a
-        //WHERE rowindex > @skip AND (@take = 0 OR rowindex <= @take)";
+                result.Status = "Success";
+                result.Message = "Exam inserted successfully.";
+                result.Id = examinee.Id.ToString();
+                result.DataVM = examinee;
 
-        //        data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(options, sqlQuery, "H.Id");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
 
-        //        result.Status = "Success";
-        //        result.Message = "Exams grid data retrieved successfully.";
-        //        result.DataVM = data;
+        public async Task<ResultVM> QuestionInsert(ExamQuestionHeaderVM question, SqlConnection conn, SqlTransaction transaction)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
-        //        return result;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        result.Message = ex.Message;
-        //        result.ExMessage = ex.ToString();
-        //        return result;
-        //    }
-        //}
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+                if (transaction == null) transaction = conn.BeginTransaction();
+
+                string query = @"
+                 INSERT INTO ExamQuestionHeaders
+        (
+            ExamId, ExamineeId, QuestionHeaderId,
+            QuestionText, QuestionType, QuestionMark, MarkObtain
+        )
+        SELECT DISTINCT
+            @ExamId, @ExamineeId, QH.Id,
+            QH.QuestionText, QH.QuestionType, QH.QuestionMark, 0
+        FROM QuestionHeaders QH
+        INNER JOIN QuestionSetDetails QSD ON QSD.QuestionHeaderId = QH.Id
+        WHERE QSD.QuestionSetHeaderId = @QuestionSetId
+          AND NOT EXISTS (
+              SELECT 1 
+              FROM ExamQuestionHeaders EQH
+              WHERE EQH.ExamId = @ExamId
+                AND EQH.ExamineeId = @ExamineeId
+                AND EQH.QuestionHeaderId = QH.Id
+          );
+                SELECT SCOPE_IDENTITY();";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@ExamId", question.ExamId);
+                    cmd.Parameters.AddWithValue("@ExamineeId", question.ExamineeId);
+                    cmd.Parameters.AddWithValue("@QuestionSetId", question.QuestionSetId);
+
+                    // ExecuteScalarAsync returns the first column of the first row
+                    object resultObj = await cmd.ExecuteScalarAsync();
+
+                    // SCOPE_IDENTITY() may return decimal, convert safely
+                    question.Id = resultObj != DBNull.Value ? Convert.ToInt32(resultObj) : 0;
+                }
+
+
+                result.Status = "Success";
+                result.Message = "Exam inserted successfully.";
+                result.Id = question.Id.ToString();
+                result.DataVM = question;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
+
+
+        public async Task<ResultVM> InsertExamQuestionDetails(int examId, SqlConnection conn, SqlTransaction transaction)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+                if (transaction == null) transaction = conn.BeginTransaction();
+
+                // 1. Get all ExamQuestionHeaders for this Exam
+                string getHeadersQuery = @"
+            SELECT Id, ExamineeId, QuestionHeaderId
+            FROM ExamQuestionHeaders
+            WHERE ExamId = @ExamId;
+        ";
+
+                var headers = new List<(int ExamQuestionHeaderId, int ExamineeId, int QuestionHeaderId)>();
+                using (var cmd = new SqlCommand(getHeadersQuery, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@ExamId", examId);
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            headers.Add((
+                                reader.GetInt32(0), // ExamQuestionHeaderId
+                                reader.GetInt32(1), // ExamineeId
+                                reader.GetInt32(2)  // QuestionHeaderId
+                            ));
+                        }
+                    }
+                }
+
+                // 2. Insert ExamQuestionOptionDetails
+                string insertOptionDetails = @"
+            INSERT INTO ExamQuestionOptionDetails
+            (ExamId, ExamQuestionHeaderId, QuestionHeaderId, QuestionOptionDetailId, QuestionOption, QuestionAnswer, ExamineeAnswer)
+            SELECT @ExamId, @EQHId, QOD.QuestionHeaderId, QOD.Id, QOD.QuestionOption, QOD.QuestionAnswer, '-'
+            FROM QuestionOptionDetails QOD
+            WHERE QOD.QuestionHeaderId = @QuestionHeaderId
+              AND NOT EXISTS (
+                  SELECT 1 FROM ExamQuestionOptionDetails EOD
+                  WHERE EOD.ExamId = @ExamId
+                  AND EOD.ExamQuestionHeaderId = @EQHId
+                  AND EOD.QuestionOptionDetailId = QOD.Id
+              );
+        ";
+
+                foreach (var header in headers)
+                {
+                    using (var cmd = new SqlCommand(insertOptionDetails, conn, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@ExamId", examId);
+                        cmd.Parameters.AddWithValue("@EQHId", header.ExamQuestionHeaderId);
+                        cmd.Parameters.AddWithValue("@QuestionHeaderId", header.QuestionHeaderId);
+
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                // 3. Insert ExamQuestionShortDetails
+                string insertShortDetails = @"
+            INSERT INTO ExamQuestionShortDetails
+            (ExamId, ExamQuestionHeaderId, QuestionHeaderId, QuestionShortDetailId, QuestionAnswer, ExamineeAnswer)
+            SELECT @ExamId, @EQHId, QSDT.QuestionHeaderId, QSDT.Id, QSDT.QuestionAnswer, '-'
+            FROM QuestionShortDetails QSDT
+            WHERE QSDT.QuestionHeaderId = @QuestionHeaderId
+              AND NOT EXISTS (
+                  SELECT 1 FROM ExamQuestionShortDetails ESD
+                  WHERE ESD.ExamId = @ExamId
+                  AND ESD.ExamQuestionHeaderId = @EQHId
+                  AND ESD.QuestionShortDetailId = QSDT.Id
+              );
+        ";
+
+                foreach (var header in headers)
+                {
+                    using (var cmd = new SqlCommand(insertShortDetails, conn, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@ExamId", examId);
+                        cmd.Parameters.AddWithValue("@EQHId", header.ExamQuestionHeaderId);
+                        cmd.Parameters.AddWithValue("@QuestionHeaderId", header.QuestionHeaderId);
+
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                result.Status = "Success";
+                result.Message = "Exam question option and short-answer details inserted successfully.";
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
+
     }
 }
