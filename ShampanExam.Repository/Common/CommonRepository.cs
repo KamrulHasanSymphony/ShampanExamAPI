@@ -1977,6 +1977,54 @@ WHERE P.IsActive = 1 ";
             }
         }
 
+        public async Task<ResultVM> GetChapterList(string[] conditionalFields, string[] conditionalValues, SqlConnection conn, SqlTransaction transaction)
+        {
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, DataVM = null };
+
+            try
+            {
+                if (conn == null)
+                {
+                    throw new Exception("Database connection fail!");
+                }
+
+                string sqlQuery = @"
+        SELECT H.Id, H.Name , H.NameInBangla, H.Remarks
+        FROM QuestionChapters H
+        WHERE IsActive = 1"; 
+
+                sqlQuery = ApplyConditions(sqlQuery, conditionalFields, conditionalValues, false);
+
+                SqlDataAdapter objComm = CreateAdapter(sqlQuery, conn, transaction);
+
+                objComm.SelectCommand = ApplyParameters(objComm.SelectCommand, conditionalFields, conditionalValues);
+                objComm.Fill(dataTable);
+
+                var modelList = dataTable.AsEnumerable()
+                    .Select(row => new QuestionChapterVM
+                    {
+                        Id = row.Field<int?>("Id") ?? 0,
+                        Name = row.Field<string>("Name") ?? "",
+                        NameInBangla = row.Field<string>("NameInBangla") ?? "",
+                        Remarks = row.Field<string>("Remarks") ?? ""
+
+                    })
+                .ToList();
+
+                result.Status = "Success";
+                result.Message = "Data retrieved successfully.";
+                result.DataVM = modelList;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.ExMessage = ex.Message;
+                result.Message = ex.Message;
+                return result;
+            }
+        }
+
         public async Task<ResultVM> GetQuestionTypeList(string[] conditionalFields, string[] conditionalValues, SqlConnection conn, SqlTransaction transaction)
         {
             DataTable dataTable = new DataTable();

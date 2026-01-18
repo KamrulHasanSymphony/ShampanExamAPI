@@ -138,6 +138,29 @@ namespace ShampanExamAPI.Controllers.Question
             }
         }
 
+
+        // POST: api/QuestionChapter/GetChapterDataById
+        [HttpPost("GetChapterDataById")]
+        public async Task<ResultVM> GetChapterDataById(GridOptions options, int masterId)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+            try
+            {
+                resultVM = await _questionChapterService.GetChapterDataById(options, masterId);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.Message,
+                    DataVM = null
+                };
+            }
+        }
+
         // POST: api/QuestionChapter/ReportPreview
         [HttpPost("ReportPreview")]
         public async Task<FileStreamResult> ReportPreview(CommonVM vm)

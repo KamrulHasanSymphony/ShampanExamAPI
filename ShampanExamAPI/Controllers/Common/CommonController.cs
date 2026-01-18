@@ -233,6 +233,27 @@ namespace ShampanExamAPI.Controllers.Common
                 };
             }
         }
+        [HttpPost("GetChapterList")]
+        public async Task<ResultVM> GetChapterList(CommonVM Vm)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+            try
+            {
+                CommonService _commonService = new CommonService();
+                resultVM = await _commonService.GetChapterList(new[] { "H.QuestionSubjectId" }, new[] { Vm.Value }, null);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM
+                {
+                    Status = "Fail",
+                    Message = "Data not fetched.",
+                    ExMessage = ex.Message,
+                    DataVM = null
+                };
+            }
+        }
         [HttpPost("GetQuestionTypeList")]
         public async Task<ResultVM> GetQuestionTypeList(CommonVM Vm)
         {
