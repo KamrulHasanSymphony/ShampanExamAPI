@@ -12,9 +12,12 @@ namespace ShampanExam.ViewModel.QuestionVM
 
         public PeramModel PeramModel { get; set; }
 
+        public List<QuestionChapterVM> chapterList { get; set; }
+
         public QuestionSubjectVM()
         {
             PeramModel = new PeramModel();
+            chapterList = new List<QuestionChapterVM>();
         }
     }
 }

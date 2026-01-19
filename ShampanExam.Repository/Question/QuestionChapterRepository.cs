@@ -243,6 +243,64 @@ namespace ShampanExam.Repository.Question
             }
         }
 
+        #region ChapterList
+        public ResultVM ChapterList(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
+        {
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+
+                string query = @"
+                SELECT 
+                    ISNULL(M.Id,0) AS Id,
+                    ISNULL(M.Name,'') AS Name,
+                    ISNULL(M.NameInBangla,'') AS NameInBangla,
+                    ISNULL(M.Remarks,'') AS Remarks,
+                    ISNULL(M.QuestionSubjectId,'') AS QuestionSubjectId,
+                    ISNULL(M.IsActive,0) AS IsActive,
+                    ISNULL(M.IsArchive,0) AS IsArchive,
+                    ISNULL(M.CreatedBy,'') AS CreatedBy,
+                    ISNULL(FORMAT(M.CreatedAt,'yyyy-MM-dd HH:mm'),'') AS CreatedAt,
+                    ISNULL(M.LastUpdateBy,'') AS LastUpdateBy,
+                    ISNULL(FORMAT(M.LastUpdateAt,'yyyy-MM-dd HH:mm'),'') AS LastUpdateAt
+                FROM QuestionChapters M
+                WHERE 1=1";
+
+                if (vm != null && !string.IsNullOrEmpty(vm.Id))
+                {
+                    query += " AND M.Id=@Id ";
+                }
+
+                query = ApplyConditions(query, conditionalFields, conditionalValues, false);
+
+                SqlDataAdapter objComm = CreateAdapter(query, conn, transaction);
+                objComm.SelectCommand = ApplyParameters(objComm.SelectCommand, conditionalFields, conditionalValues);
+
+                if (vm != null && !string.IsNullOrEmpty(vm.Id))
+                {
+                    objComm.SelectCommand.Parameters.AddWithValue("@Id", vm.Id);
+                }
+
+                objComm.Fill(dataTable);
+
+                result.Status = "Success";
+                result.Message = "Chapter Data retrieved successfully.";
+                result.DataVM = dataTable;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
+        #endregion
+
         // ListAsDataTable
         public async Task<ResultVM> ListAsDataTable(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null,
             SqlConnection conn = null, SqlTransaction transaction = null)

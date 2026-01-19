@@ -1,4 +1,5 @@
-﻿using ShampanExam.Repository.Common;
+﻿using Newtonsoft.Json;
+using ShampanExam.Repository.Common;
 using ShampanExam.ViewModel.CommonVMs;
 using ShampanExam.ViewModel.KendoCommon;
 using ShampanExam.ViewModel.QuestionVM;
@@ -223,8 +224,22 @@ namespace ShampanExam.Repository.Question
                     LastUpdateAt = row.Field<string>("LastUpdateAt")
                 }).ToList();
 
+
+                QuestionChapterRepository questionChapterListrepository = new QuestionChapterRepository();
+                // ✅ Load Design Category questionSetDetailList
+                var QuestionChapterListrepository = questionChapterListrepository.ChapterList(new[] { "M.QuestionSubjectId" }, conditionalValues, vm, conn, transaction);
+                if (QuestionChapterListrepository.Status == "Success" && QuestionChapterListrepository.DataVM is DataTable dt2)
+                {
+                    string json = JsonConvert.SerializeObject(dt2);
+                    var ChapterList = JsonConvert.DeserializeObject<List<QuestionChapterVM>>(json);
+
+                    if (list.Any())
+                        list.FirstOrDefault().chapterList = ChapterList;
+                }
+
+
                 result.Status = "Success";
-                result.Message = "QuestionSubjects retrieved successfully.";
+                result.Message = "Data retrieved successfully.";
                 result.DataVM = list;
 
                 return result;
