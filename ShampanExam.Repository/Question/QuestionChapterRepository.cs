@@ -2,6 +2,7 @@
 using ShampanExam.ViewModel.CommonVMs;
 using ShampanExam.ViewModel.KendoCommon;
 using ShampanExam.ViewModel.QuestionVM;
+using ShampanExam.ViewModel.Utility;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -27,12 +28,12 @@ namespace ShampanExam.Repository.Question
                 string query = @"
                 INSERT INTO QuestionChapters
                 (
-                    Name, NameInBangla, Remarks,
+                    Name, NameInBangla, Remarks,QuestionSubjectId,
                     IsArchive, IsActive, CreatedBy, CreatedFrom, CreatedAt
                 )
                 VALUES
                 (
-                    @Name, @NameInBangla, @Remarks,
+                    @Name, @NameInBangla, @Remarks,@QuestionSubjectId,
                     @IsArchive, @IsActive, @CreatedBy, @CreatedFrom, GETDATE()
                 );
                 SELECT SCOPE_IDENTITY();";
@@ -42,6 +43,7 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@NameInBangla", vm.NameInBangla ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@QuestionSubjectId", vm.QuestionSubjectId ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@IsArchive", vm.IsArchive);
                     cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
                     cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
@@ -81,6 +83,7 @@ namespace ShampanExam.Repository.Question
                     Name = @Name,
                     NameInBangla = @NameInBangla,
                     Remarks = @Remarks,
+                    QuestionSubjectId = @QuestionSubjectId,
                     IsActive = @IsActive,
                     LastUpdateBy = @LastUpdateBy,
                     LastUpdateFrom = @LastUpdateFrom,
@@ -93,6 +96,7 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@NameInBangla", vm.NameInBangla ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@QuestionSubjectId", vm.QuestionSubjectId ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
                     cmd.Parameters.AddWithValue("@LastUpdateBy", vm.LastUpdateBy ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@LastUpdateFrom", vm.LastUpdateFrom ?? (object)DBNull.Value);
@@ -187,6 +191,7 @@ namespace ShampanExam.Repository.Question
                     ISNULL(M.Name,'') AS Name,
                     ISNULL(M.NameInBangla,'') AS NameInBangla,
                     ISNULL(M.Remarks,'') AS Remarks,
+                    ISNULL(M.QuestionSubjectId,'') AS QuestionSubjectId,
                     ISNULL(M.IsActive,0) AS IsActive,
                     ISNULL(M.IsArchive,0) AS IsArchive,
                     ISNULL(M.CreatedBy,'') AS CreatedBy,
@@ -215,6 +220,7 @@ namespace ShampanExam.Repository.Question
                     Name = row.Field<string>("Name"),
                     NameInBangla = row.Field<string>("NameInBangla"),
                     Remarks = row.Field<string>("Remarks"),
+                    QuestionSubjectId = row.Field<int>("QuestionSubjectId"),
                     IsActive = row.Field<bool>("IsActive"),
                     IsArchive = row.Field<bool>("IsArchive"),
                     CreatedBy = row.Field<string>("CreatedBy"),
@@ -237,6 +243,64 @@ namespace ShampanExam.Repository.Question
             }
         }
 
+        #region ChapterList
+        public ResultVM ChapterList(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null, SqlConnection conn = null, SqlTransaction transaction = null)
+        {
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+
+                string query = @"
+                SELECT 
+                    ISNULL(M.Id,0) AS Id,
+                    ISNULL(M.Name,'') AS Name,
+                    ISNULL(M.NameInBangla,'') AS NameInBangla,
+                    ISNULL(M.Remarks,'') AS Remarks,
+                    ISNULL(M.QuestionSubjectId,'') AS QuestionSubjectId,
+                    ISNULL(M.IsActive,0) AS IsActive,
+                    ISNULL(M.IsArchive,0) AS IsArchive,
+                    ISNULL(M.CreatedBy,'') AS CreatedBy,
+                    ISNULL(FORMAT(M.CreatedAt,'yyyy-MM-dd HH:mm'),'') AS CreatedAt,
+                    ISNULL(M.LastUpdateBy,'') AS LastUpdateBy,
+                    ISNULL(FORMAT(M.LastUpdateAt,'yyyy-MM-dd HH:mm'),'') AS LastUpdateAt
+                FROM QuestionChapters M
+                WHERE 1=1";
+
+                if (vm != null && !string.IsNullOrEmpty(vm.Id))
+                {
+                    query += " AND M.Id=@Id ";
+                }
+
+                query = ApplyConditions(query, conditionalFields, conditionalValues, false);
+
+                SqlDataAdapter objComm = CreateAdapter(query, conn, transaction);
+                objComm.SelectCommand = ApplyParameters(objComm.SelectCommand, conditionalFields, conditionalValues);
+
+                if (vm != null && !string.IsNullOrEmpty(vm.Id))
+                {
+                    objComm.SelectCommand.Parameters.AddWithValue("@Id", vm.Id);
+                }
+
+                objComm.Fill(dataTable);
+
+                result.Status = "Success";
+                result.Message = "Chapter Data retrieved successfully.";
+                result.DataVM = dataTable;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
+        #endregion
+
         // ListAsDataTable
         public async Task<ResultVM> ListAsDataTable(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null,
             SqlConnection conn = null, SqlTransaction transaction = null)
@@ -249,7 +313,7 @@ namespace ShampanExam.Repository.Question
                 if (conn == null) throw new Exception("Database connection failed!");
 
                 string query = @"
-                SELECT Id, Name, NameInBangla, Remarks,
+                SELECT Id, Name, NameInBangla, Remarks,QuestionSubjectId,
                        IsActive, IsArchive, CreatedBy, CreatedAt,
                        LastUpdateBy, LastUpdateAt
                 FROM QuestionChapters
@@ -296,7 +360,7 @@ namespace ShampanExam.Repository.Question
                 }
 
                 string query = @"
-                SELECT Id, Name,Remarks
+                SELECT Id, Name,Remarks,QuestionSubjectId
                 FROM QuestionChapters
                 WHERE IsActive = 1 AND IsArchive = 0
                 ORDER BY Name";
@@ -314,7 +378,8 @@ namespace ShampanExam.Repository.Question
                 {
                     Id = Convert.ToInt32(row["Id"]),
                     Name = row["Name"]?.ToString(),
-                    Remarks = row["Remarks"]?.ToString()
+                    Remarks = row["Remarks"]?.ToString(),
+                    QuestionSubjectId = Convert.ToInt32(row["QuestionSubjectId"])
                 }).ToList();
 
                 result.Status = "Success";
@@ -345,6 +410,7 @@ namespace ShampanExam.Repository.Question
                 -- Count
                 SELECT COUNT(DISTINCT H.Id) AS totalcount
                 FROM QuestionChapters H
+                LEFT OUTER JOIN QuestionSubjects M ON M.Id = H.QuestionSubjectId
                 WHERE H.IsArchive != 1
                 " + (options.filter.Filters.Count > 0
                         ? " AND (" + GridQueryBuilder<QuestionChapterVM>.FilterCondition(options.filter) + ")"
@@ -361,6 +427,7 @@ namespace ShampanExam.Repository.Question
                            ISNULL(H.Name,'') AS Name,
                            ISNULL(H.NameInBangla,'') AS NameInBangla,
                            ISNULL(H.Remarks,'') AS Remarks,
+                           ISNULL(M.Name,'') AS QuestionSubjectName,
                            ISNULL(H.IsActive,0) AS IsActive,
                            ISNULL(H.IsArchive,0) AS IsArchive,
                            CASE WHEN ISNULL(H.IsActive,0)=1 THEN 'Active' ELSE 'Inactive' END AS Status,
@@ -369,6 +436,7 @@ namespace ShampanExam.Repository.Question
                            ISNULL(H.LastUpdateBy,'') AS LastUpdateBy,
                            ISNULL(FORMAT(H.LastUpdateAt,'yyyy-MM-dd HH:mm'),'') AS LastUpdateAt
                     FROM QuestionChapters H
+                    LEFT OUTER JOIN QuestionSubjects M ON M.Id = H.QuestionSubjectId
                     WHERE H.IsArchive != 1
                     " + (options.filter.Filters.Count > 0
                             ? " AND (" + GridQueryBuilder<QuestionChapterVM>.FilterCondition(options.filter) + ")"
@@ -392,6 +460,88 @@ namespace ShampanExam.Repository.Question
             }
         }
 
+
+        public async Task<ResultVM> GetChapterDataById(GridOptions options, int masterId, SqlConnection conn, SqlTransaction transaction)
+        {
+            bool isNewConnection = false;
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+
+            try
+            {
+                if (conn == null)
+                {
+                    conn = new SqlConnection(DatabaseHelper.GetConnectionString());
+                    conn.Open();
+                    isNewConnection = true;
+                }
+
+                var data = new GridEntity<QuestionChapterVM>();
+
+                // Define your SQL query string
+                string sqlQuery = @"
+    -- Count query
+            SELECT COUNT(DISTINCT H.Id) AS totalcount
+                FROM QuestionChapters H
+                LEFT OUTER JOIN QuestionSubjects M ON M.Id = H.QuestionSubjectId
+            WHERE H.QuestionSubjectId = @masterId
+
+    -- Add the filter condition
+    " + (options.filter.Filters.Count > 0 ? " AND (" + GridQueryBuilder<QuestionChapterVM>.FilterCondition(options.filter) + ")" : "") + @"
+
+    -- Data query with pagination and sorting
+    SELECT * 
+    FROM (
+        SELECT 
+        ROW_NUMBER() OVER(ORDER BY " + (options.sort.Count > 0 ? options.sort[0].field + " " + options.sort[0].dir : "H.Id DESC") + @") AS rowindex,
+
+                   ISNULL(H.Id,0) AS Id,
+                   ISNULL(H.Name,'') AS Name,
+                   ISNULL(H.NameInBangla,'') AS NameInBangla,
+                   ISNULL(H.Remarks,'') AS Remarks,
+                   ISNULL(M.Name,'') AS QuestionSubjectName,
+                   ISNULL(H.IsActive,0) AS IsActive,
+                   ISNULL(H.IsArchive,0) AS IsArchive,
+                   CASE WHEN ISNULL(H.IsActive,0)=1 THEN 'Active' ELSE 'Inactive' END AS Status,
+                   ISNULL(H.CreatedBy,'') AS CreatedBy,
+                   ISNULL(FORMAT(H.CreatedAt,'yyyy-MM-dd HH:mm'),'') AS CreatedAt,
+                   ISNULL(H.LastUpdateBy,'') AS LastUpdateBy,
+                   ISNULL(FORMAT(H.LastUpdateAt,'yyyy-MM-dd HH:mm'),'') AS LastUpdateAt
+            FROM QuestionChapters H
+            LEFT OUTER JOIN QuestionSubjects M ON M.Id = H.QuestionSubjectId
+            WHERE H.QuestionSubjectId = @masterId
+
+    -- Add the filter condition
+    " + (options.filter.Filters.Count > 0 ? " AND (" + GridQueryBuilder<QuestionChapterVM>.FilterCondition(options.filter) + ")" : "") + @"
+
+    ) AS a
+    WHERE rowindex > @skip AND rowindex <= (@skip + @take)
+";
+                sqlQuery = sqlQuery.Replace("@masterId", "" + masterId + "");
+                data = KendoGrid<QuestionChapterVM>.GetGridData_CMD(options, sqlQuery, "H.Id");
+
+                result.Status = "Success";
+                result.Message = "Data retrieved successfully.";
+                result.DataVM = data;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.ExMessage = ex.Message;
+                result.Message = ex.Message;
+                return result;
+            }
+            finally
+            {
+                if (isNewConnection && conn != null)
+                {
+                    conn.Close();
+                }
+            }
+        }
+
+
         // ReportPreview
         public async Task<ResultVM> ReportPreview(string[] conditionalFields, string[] conditionalValues, PeramModel vm = null,
             SqlConnection conn = null, SqlTransaction transaction = null)
@@ -409,6 +559,7 @@ namespace ShampanExam.Repository.Question
                     ISNULL(H.Name,'') AS Name,
                     ISNULL(H.NameInBangla,'') AS NameInBangla,
                     ISNULL(H.Remarks,'') AS Remarks,
+                    ISNULL(M.Name,'') AS QuestionSubjectName,
                     ISNULL(H.IsActive,0) AS IsActive,
                     ISNULL(H.IsArchive,0) AS IsArchive,
                     CASE WHEN ISNULL(H.IsActive,0)=1 THEN 'Active' ELSE 'Inactive' END AS Status,
@@ -417,6 +568,7 @@ namespace ShampanExam.Repository.Question
                     ISNULL(H.LastUpdateBy,'') AS LastUpdateBy,
                     ISNULL(FORMAT(H.LastUpdateAt,'yyyy-MM-dd HH:mm'),'') AS LastUpdateAt
                 FROM QuestionChapters H
+                LEFT OUTER JOIN QuestionSubjects M ON M.Id = H.QuestionSubjectId
                 WHERE 1=1";
 
                 if (vm != null && !string.IsNullOrEmpty(vm.Id))

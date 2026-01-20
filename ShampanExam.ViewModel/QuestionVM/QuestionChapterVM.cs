@@ -9,6 +9,8 @@ namespace ShampanExam.ViewModel.QuestionVM
         public string? Name { get; set; }
         public string? NameInBangla { get; set; }
         public string? Remarks { get; set; }
+        public int? QuestionSubjectId { get; set; }
+        public string? QuestionSubjectName { get; set; }
 
         public PeramModel PeramModel { get; set; }
 
