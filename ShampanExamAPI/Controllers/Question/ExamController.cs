@@ -340,5 +340,27 @@ namespace ShampanExamAPI.Controllers.Question
                 return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message };
             }
         }
+
+        // POST: api/Exam/RandomSubjectGridDataById
+        [HttpPost("RandomSubjectGridDataById")]
+        public async Task<ResultVM> RandomSubjectGridDataById(GridOptions options, int masterId)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+            try
+            {
+                resultVM = await _examService.RandomSubjectGridDataById(options, masterId);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM
+                {
+                    Status = "Fail",
+                    Message = ex.Message,
+                    ExMessage = ex.Message,
+                    DataVM = null
+                };
+            }
+        }
     }
 }

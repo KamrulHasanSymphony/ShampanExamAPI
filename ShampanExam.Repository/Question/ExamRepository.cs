@@ -1520,5 +1520,80 @@ SELECT SCOPE_IDENTITY();";
             }
         }
 
+        public async Task<ResultVM> RandomSubjectGridDataById(GridOptions options, int masterId, SqlConnection conn, SqlTransaction transaction)
+        {
+            bool isNewConnection = false;
+            DataTable dataTable = new DataTable();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
+
+            try
+            {
+                if (conn == null)
+                {
+                    conn = new SqlConnection(DatabaseHelper.GetConnectionString());
+                    conn.Open();
+                    isNewConnection = true;
+                }
+
+                var data = new GridEntity<AutomatedExamDetailsVM>();
+
+                // Define your SQL query string
+                string sqlQuery = @"
+    -- Count query
+            SELECT COUNT(DISTINCT D.Id) AS totalcount
+                from AutomatedExamDetails D
+                     LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
+                     Where AutomatedExamId = @masterId
+
+    -- Add the filter condition
+    " + (options.filter.Filters.Count > 0 ? " AND (" + GridQueryBuilder<AutomatedExamDetailsVM>.FilterCondition(options.filter) + ")" : "") + @"
+
+    -- Data query with pagination and sorting
+    SELECT * 
+    FROM (
+        SELECT 
+        ROW_NUMBER() OVER(ORDER BY " + (options.sort.Count > 0 ? options.sort[0].field + " " + options.sort[0].dir : "D.Id DESC") + @") AS rowindex,
+
+                   ISNULL(D.Id,0) Id,
+                     ISNULL(D.AutomatedExamId,0) AutomatedExamId,
+                     ISNULL(D.SubjectId,0) SubjectId,
+                     ISNULL(S.Name,0) SubjectName,
+                     ISNULL(D.NumberOfQuestion,0) NumberOfQuestion,
+                     ISNULL(D.QuestionType,'') QuestionType,
+                     ISNULL(D.QuestionMark,0) QuestionMark
+
+                     from AutomatedExamDetails D
+                     LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
+                     Where AutomatedExamId = @masterId
+
+    -- Add the filter condition
+    " + (options.filter.Filters.Count > 0 ? " AND (" + GridQueryBuilder<AutomatedExamDetailsVM>.FilterCondition(options.filter) + ")" : "") + @"
+
+    ) AS a
+    WHERE rowindex > @skip AND rowindex <= (@skip + @take)
+";
+                sqlQuery = sqlQuery.Replace("@masterId", "" + masterId + "");
+                data = KendoGrid<AutomatedExamDetailsVM>.GetGridData_CMD(options, sqlQuery, "D.Id");
+
+                result.Status = "Success";
+                result.Message = "Data retrieved successfully.";
+                result.DataVM = data;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.ExMessage = ex.Message;
+                result.Message = ex.Message;
+                return result;
+            }
+            finally
+            {
+                if (isNewConnection && conn != null)
+                {
+                    conn.Close();
+                }
+            }
+        }
     }
 }
