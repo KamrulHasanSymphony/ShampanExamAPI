@@ -1992,7 +1992,8 @@ WHERE P.IsActive = 1 ";
                 string sqlQuery = @"
         SELECT  Distinct 
       QuestionType AS Name
-	  FROM QuestionHeaders"; 
+	  FROM QuestionHeaders Where QuestionType != 'SingleLine'";
+
 
                 //sqlQuery = ApplyConditions(sqlQuery, conditionalFields, conditionalValues, false);
 

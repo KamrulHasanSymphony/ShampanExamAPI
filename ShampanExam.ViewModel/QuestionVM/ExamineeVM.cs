@@ -10,6 +10,7 @@ namespace ShampanExam.ViewModel.QuestionVM
 
         public int? ExamineeGroupId { get; set; }
         public string? Name { get; set; }
+        public string? GroupName { get; set; }
         public string? MobileNo { get; set; }
         public string? LogInId { get; set; }
         public string? Password { get; set; }

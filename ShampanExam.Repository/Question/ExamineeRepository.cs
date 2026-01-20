@@ -676,8 +676,10 @@ GROUP BY
                 // Define your SQL query string
                 string sqlQuery = $@"
                     -- Count query
-                    SELECT COUNT(DISTINCT Id) AS totalcount
-                    from Examinees Where 1=1
+                    SELECT COUNT(DISTINCT Examinees.Id) AS totalcount
+                    from Examinees
+                    LEFT OUTER JOIN ExamineeGroups G ON Examinees.ExamineeGroupId = G.Id
+                    Where 1=1
             -- Add the filter condition
                 " + (options.filter.Filters.Count > 0 ? " AND (" + GridQueryBuilder<ExamineeVM>.FilterCondition(options.filter) + ")" : "");
 
@@ -689,13 +691,15 @@ GROUP BY
             SELECT * 
             FROM (
                 SELECT 
-                ROW_NUMBER() OVER(ORDER BY " + (options.sort.Count > 0 ? options.sort[0].field + " " + options.sort[0].dir : "Id ASC") + $@") AS rowindex,
+                ROW_NUMBER() OVER(ORDER BY " + (options.sort.Count > 0 ? options.sort[0].field + " " + options.sort[0].dir : "Examinees.Id ASC") + $@") AS rowindex,
 
-                    ISNULL(Id,0) ExamineeId,
+                    ISNULL(Examinees.Id,0) ExamineeId,
                     ISNULL(ExamineeGroupId,0) ExamineeGroupId,
-                    ISNULL(Name,'') Name,
+                    ISNULL(G.Name,'') GroupName,
+                    ISNULL(Examinees.Name,'') Name,
                     ISNULL(MobileNo,'') MobileNo
-                    from Examinees
+                    from Examinees 
+                    LEFT OUTER JOIN ExamineeGroups G ON Examinees.ExamineeGroupId = G.Id
                      WHERE 1= 1
 
 

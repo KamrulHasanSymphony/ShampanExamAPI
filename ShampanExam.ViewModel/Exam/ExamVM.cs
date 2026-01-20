@@ -39,6 +39,8 @@ namespace ShampanExam.ViewModel.Exam
         public List<int> SelectedOptionIds { get; set; } = new List<int>();
         public bool IsExamSubmitted { get; set; }
         public string? Name { get; set; }
+        public string? SubjectName { get; set; }
+        public string? ChapterName { get; set; }
 
     }
 

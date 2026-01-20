@@ -390,6 +390,8 @@ namespace ShampanExam.Repository.Question
                     QuestionSetDetails QD
                     LEFT OUTER JOIN QuestionSetHeaders QS ON QD.QuestionSetHeaderId = QS.Id
                     LEFT OUTER JOIN QuestionHeaders QH ON QD.QuestionHeaderId = QH.Id 
+                    LEFT OUTER JOIN QuestionSubjects S ON QH.QuestionSubjectId = S.Id
+                    LEFT OUTER JOIN QuestionChapters C ON QH.QuestionChapterId = C.Id
                     Where 1=1
             -- Add the filter condition
                 " + (options.filter.Filters.Count > 0 ? " AND (" + GridQueryBuilder<QuestionVM>.FilterCondition(options.filter) + ")" : "");
@@ -408,11 +410,16 @@ namespace ShampanExam.Repository.Question
                     QS.Name,
                     QH.QuestionText,
                     QH.QuestionType,
-                    QH.QuestionMark
+                    QH.QuestionMark,
+                    QH.QuestionSubjectId,
+                    S.Name SubjectName,
+                    C.Name ChapterName
                     from 
                     QuestionSetDetails QD
                     LEFT OUTER JOIN QuestionSetHeaders QS ON QD.QuestionSetHeaderId = QS.Id
                     LEFT OUTER JOIN QuestionHeaders QH ON QD.QuestionHeaderId = QH.Id
+                    LEFT OUTER JOIN QuestionSubjects S ON QH.QuestionSubjectId = S.Id
+                    LEFT OUTER JOIN QuestionChapters C ON QH.QuestionChapterId = C.Id
                      WHERE 1= 1
 
 

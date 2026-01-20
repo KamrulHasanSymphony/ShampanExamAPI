@@ -17,11 +17,8 @@ namespace ShampanExam.Service.Question
         CommonRepository _commonRepo = new CommonRepository();
 
         // Insert Method
-        // Insert Method
         public async Task<ResultVM> Insert(ExamVM exam)
         {
-            string CodeGroup = "Exam";
-            string CodeName = "Exam";
             ExamRepository _repo = new ExamRepository();
             _commonRepo = new CommonRepository();
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
@@ -31,58 +28,117 @@ namespace ShampanExam.Service.Question
 
             try
             {
+                // Open SQL connection and transaction
                 conn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
                 conn.Open();
                 isNewConnection = true;
                 transaction = conn.BeginTransaction();
 
-                // Generate Exam Code
-                string code = _commonRepo.GenerateCode(CodeGroup, CodeName, exam.Date, exam.BranchId, conn, transaction);
+                // 1. Generate Exam Code
+                string code = _commonRepo.GenerateCode("Exam", "Exam", exam.Date, exam.BranchId, conn, transaction);
                 if (string.IsNullOrEmpty(code))
                     throw new Exception("Code Generation Failed!");
 
                 exam.Code = code;
 
-                // 1. Insert Exam
+                // 2. Insert Exam
                 result = await _repo.Insert(exam, conn, transaction);
                 if (result.Status != "Success") throw new Exception(result.Message);
 
                 int examId = Convert.ToInt32(result.Id);
 
-                // 2. Insert Exam Details
-                foreach (var item in exam.automatedExamDetailList)
+                // 3. Insert Automated Exam Details and Random Questions
+                if (exam.automatedExamDetailList != null && exam.automatedExamDetailList.Any())
                 {
-                    item.Id = examId;
-                    var detailResult = await _repo.DetailsInsert(item, conn, transaction);
-                    if (detailResult.Status != "Success") throw new Exception(detailResult.Message);
-                }
-
-                // 3. Insert Examinees and Questions
-                foreach (var examinee in exam.examExamineeList)
-                {
-                    examinee.ExamId = examId.ToString();
-                    examinee.CreatedBy = exam.CreatedBy;
-                    examinee.CreatedFrom = exam.CreatedFrom;
-                    var examineeResult = await _repo.ExamineeInsert(examinee, conn, transaction);
-                    if (examineeResult.Status != "Success") throw new Exception(examineeResult.Message);
-
-                    // Insert Questions for this Examinee
-                    foreach (var question in exam.examQuestionHeaderList)
+                    foreach (var item in exam.automatedExamDetailList)
                     {
-                        question.ExamId = examId;
-                        question.ExamineeId = examinee.ExamineeId;
-                        question.QuestionSetId = exam.QuestionSetId;
+                        item.Id = examId; // Link detail to exam
 
-                        var questionResult = await _repo.QuestionInsert(question, conn, transaction);
-                        if (questionResult.Status != "Success") throw new Exception(questionResult.Message);
+                        var subjectId = item.SubjectId;
+                        var questionType = item.QuestionType;
+                        var noOfQuestion = item.NumberOfQuestion;
+
+                        // Insert automated exam detail
+                        var detailResult = await _repo.DetailsInsert(item, conn, transaction);
+                        if (detailResult.Status != "Success")
+                            throw new Exception(detailResult.Message);
+
+                        // Insert examinees and their questions for this detail
+                        if (exam.examExamineeList != null && exam.examExamineeList.Any())
+                        {
+                            foreach (var examinee in exam.examExamineeList)
+                            {
+                                examinee.ExamId = examId.ToString();
+                                examinee.CreatedBy = exam.CreatedBy;
+                                examinee.CreatedFrom = exam.CreatedFrom;
+
+                                // Insert examinee
+                                var examineeResult = await _repo.ExamineeInsert(examinee, conn, transaction);
+                                if (examineeResult.Status != "Success")
+                                    throw new Exception(examineeResult.Message);
+
+                                // Prepare question object for random insertion
+                                var question = new ExamQuestionHeaderVM
+                                {
+                                    ExamId = examId,
+                                    ExamineeId = examinee.ExamineeId,
+                                    QuestionSetId = exam.QuestionSetId,
+                                    QuestionSubjectId = subjectId,
+                                    QuestionType = questionType,
+                                    NumberOfQuestion = noOfQuestion
+                                };
+
+                                // Insert random questions for this examinee
+                                var questionResult = await _repo.RandomQuestionInsert(question, conn, transaction);
+                                if (questionResult.Status != "Success")
+                                    throw new Exception(questionResult.Message);
+                            }
+                        }
                     }
-
-                    // 4. Insert Option and Short Answer Details for this Examinee
-                    var detailsResult = await _repo.InsertExamQuestionDetails(examId, conn, transaction);
-                    if (detailsResult.Status != "Success") throw new Exception(detailsResult.Message);
                 }
+                else
+                {
+                    // If not automated, insert manually added questions per examinee
+                    if (exam.examExamineeList != null && exam.examExamineeList.Any())
+                    {
+                        foreach (var examinee in exam.examExamineeList)
+                        {
+                            examinee.ExamId = examId.ToString();
+                            examinee.CreatedBy = exam.CreatedBy;
+                            examinee.CreatedFrom = exam.CreatedFrom;
+
+                            var examineeResult = await _repo.ExamineeInsert(examinee, conn, transaction);
+                            if (examineeResult.Status != "Success")
+                                throw new Exception(examineeResult.Message);
+
+                            // Insert each question for this examinee
+                            if (exam.examQuestionHeaderList != null)
+                            {
+                                foreach (var question in exam.examQuestionHeaderList)
+                                {
+                                    question.ExamId = examId;
+                                    question.ExamineeId = examinee.ExamineeId;
+
+                                    var questionResult = await _repo.QuestionInsert(question, conn, transaction);
+                                    if (questionResult.Status != "Success")
+                                        throw new Exception(questionResult.Message);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 4. Insert Option and Short Answer Details
+                var detailsResultFinal = await _repo.InsertExamQuestionDetails(examId, conn, transaction);
+                if (detailsResultFinal.Status != "Success")
+                    throw new Exception(detailsResultFinal.Message);
 
                 transaction.Commit();
+
+                result.Status = "Success";
+                result.Message = "Exam inserted successfully.";
+                result.Id = examId.ToString();
+                result.DataVM = exam;
                 return result;
             }
             catch (Exception ex)
@@ -91,7 +147,7 @@ namespace ShampanExam.Service.Question
                 result.Status = "Fail";
                 result.Message = ex.Message;
                 result.ExMessage = ex.ToString();
-                result.Code = exam.Code;
+                result.Id = exam.Code;
                 return result;
             }
             finally
@@ -100,118 +156,19 @@ namespace ShampanExam.Service.Question
             }
         }
 
-        //public async Task<ResultVM> Insert(ExamVM exam)
-        //{
-        //    string CodeGroup = "Exam";
-        //    string CodeName = "Exam";
-        //    ExamRepository _repo = new ExamRepository();
-        //    _commonRepo = new CommonRepository();
-        //    ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
-        //    bool isNewConnection = false;
-        //    SqlConnection conn = null;
-        //    SqlTransaction transaction = null;
-        //    CommonVM commonVM = new CommonVM();
-
-        //    commonVM.Group = "Exam";
-        //    commonVM.Name = "Exam";
-
-        //    _commonRepo = new CommonRepository();
-        //    try
-        //    {
-        //        conn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
-        //        conn.Open();
-        //        isNewConnection = true;
-        //        transaction = conn.BeginTransaction();
-
-
-
-        //        string code = _commonRepo.GenerateCode(CodeGroup, CodeName, exam.Date, exam.BranchId, conn, transaction);
-
-        //        if (!string.IsNullOrEmpty(code))
-        //        {
-        //            exam.Code = code;
-
-
-        //            result = await _repo.Insert(exam, conn, transaction);
-        //            if (result.Status == "Success")
-        //            {
-        //                foreach (var item in exam.automatedExamDetailList)
-        //                {
-        //                    item.Id = Convert.ToInt32(result.Id);
-        //                    var resultt = await _repo.DetailsInsert(item, conn, transaction);
-        //                    if (result.Status != "Success")
-        //                    {
-        //                        throw new Exception(resultt.Message);
-        //                    }
-
-        //                }
-        //                foreach (var examinee in exam.examExamineeList)
-        //                {
-        //                    //examinee.Id = Convert.ToInt32(result.Id);
-        //                    examinee.ExamId = result.Id;
-        //                    var examineeresult = await _repo.ExamineeInsert(examinee, conn, transaction);
-
-        //                    foreach (var question in exam.examQuestionHeaderList)
-        //                    {
-        //                        question.ExamId = Convert.ToInt32(result.Id);
-        //                        question.ExamineeId = examinee.ExamineeId;
-        //                        question.QuestionSetId = exam.QuestionSetId;
-        //                        //examinee.Id = Convert.ToInt32(result.Id);
-        //                        var questionresult = await _repo.QuestionInsert(question, conn, transaction);
-        //                        if (questionresult.Status != "Success")
-        //                        {
-        //                            throw new Exception(questionresult.Message);
-        //                        }
-
-        //                    }
-
-        //                    if (isNewConnection && result.Status == "Success")
-        //                    {
-        //                        transaction.Commit();
-        //                    }
-        //                    else
-        //                    {
-        //                        throw new Exception(result.Message);
-        //                    }
-        //                    if (examineeresult.Status != "Success")
-        //                    {
-        //                        throw new Exception(examineeresult.Message);
-        //                    }
-
-        //                }
-
-
-
-        //            }
-
-        //        }
-        //        else
-        //        {
-        //            throw new Exception("Code Generation Failed!");
-        //        }
-        //        return result;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        if (transaction != null && isNewConnection) transaction.Rollback();
-        //        result.Message = ex.Message;
-        //        result.ExMessage = ex.ToString();
-        //        result.Code = exam.Code;
-        //        return result;
-        //    }
-        //    finally
-        //    {
-        //        if (isNewConnection && conn != null) conn.Close();
-        //    }
-        //}
-
-        //Update Method
         public async Task<ResultVM> Update(ExamVM exam)
         {
             ExamRepository _repo = new ExamRepository();
             _commonRepo = new CommonRepository();
-            ResultVM result = new ResultVM { Status = "Fail", Message = "Error", Id = exam.Id.ToString(), DataVM = exam };
+
+            ResultVM result = new ResultVM
+            {
+                Status = "Fail",
+                Message = "Error",
+                Id = exam.Id.ToString(),
+                DataVM = exam
+            };
 
             bool isNewConnection = false;
             SqlConnection conn = null;
@@ -224,41 +181,118 @@ namespace ShampanExam.Service.Question
                 isNewConnection = true;
                 transaction = conn.BeginTransaction();
 
-                #region Check Exist Data
-                string[] conditionField = { "Id not", "Code" };
-                string[] conditionValue = { exam.Id.ToString(), exam.Code.Trim() };
+                int examId = exam.Id;
 
-                bool exist = _commonRepo.CheckExists("Exams", conditionField, conditionValue, conn, transaction);
-                if (exist)
-                {
-                    result.Message = "Data Already Exists!";
-                    throw new Exception("Data Already Exists!");
-                }
-                #endregion
-
+                /* -------------------- 1. Update Exam -------------------- */
                 result = await _repo.Update(exam, conn, transaction);
-
-                if (isNewConnection && result.Status == "Success")
-                    transaction.Commit();
-                else
+                if (result.Status != "Success")
                     throw new Exception(result.Message);
 
+                /* -------------------- 2. Delete Existing Child Data -------------------- */
+                _commonRepo.DetailsDelete("ExamExaminees", new[] { "ExamId" }, new[] { examId.ToString() }, conn, transaction);
+                _commonRepo.DetailsDelete("ExamQuestionHeaders", new[] { "ExamId" }, new[] { examId.ToString() }, conn, transaction);
+                _commonRepo.DetailsDelete("ExamQuestionOptionDetails", new[] { "ExamId" }, new[] { examId.ToString() }, conn, transaction);
+                _commonRepo.DetailsDelete("ExamQuestionShortDetails", new[] { "ExamId" }, new[] { examId.ToString() }, conn, transaction);
+
+                /* -------------------- 3. Automated Exam (Random Questions) -------------------- */
+                if (exam.automatedExamDetailList != null && exam.automatedExamDetailList.Any())
+                {
+                    foreach (var item in exam.automatedExamDetailList)
+                    {
+                        item.Id = examId;
+
+                        var subjectId = item.SubjectId;
+                        var questionType = item.QuestionType;
+                        var noOfQuestion = item.NumberOfQuestion;
+
+                        // Insert automated exam detail
+                        var detailResult = await _repo.DetailsInsert(item, conn, transaction);
+                        if (detailResult.Status != "Success")
+                            throw new Exception(detailResult.Message);
+
+                        // Insert examinees and random questions
+                        foreach (var examinee in exam.examExamineeList)
+                        {
+                            examinee.ExamId = examId.ToString();
+                            examinee.CreatedBy = exam.CreatedBy;
+                            examinee.CreatedFrom = exam.CreatedFrom;
+
+                            var examineeResult = await _repo.ExamineeInsert(examinee, conn, transaction);
+                            if (examineeResult.Status != "Success")
+                                throw new Exception(examineeResult.Message);
+
+                            var question = new ExamQuestionHeaderVM
+                            {
+                                ExamId = examId,
+                                ExamineeId = examinee.ExamineeId,
+                                QuestionSetId = exam.QuestionSetId,
+                                QuestionSubjectId = subjectId,
+                                QuestionType = questionType,
+                                NumberOfQuestion = noOfQuestion
+                            };
+
+                            var questionResult = await _repo.RandomQuestionInsert(question, conn, transaction);
+                            if (questionResult.Status != "Success")
+                                throw new Exception(questionResult.Message);
+                        }
+                    }
+                }
+                else
+                {
+                    /* -------------------- 4. Manual Questions -------------------- */
+                    foreach (var examinee in exam.examExamineeList)
+                    {
+                        examinee.ExamId = examId.ToString();
+                        examinee.CreatedBy = exam.CreatedBy;
+                        examinee.CreatedFrom = exam.CreatedFrom;
+
+                        var examineeResult = await _repo.ExamineeInsert(examinee, conn, transaction);
+                        if (examineeResult.Status != "Success")
+                            throw new Exception(examineeResult.Message);
+
+                        if (exam.examQuestionHeaderList != null)
+                        {
+                            foreach (var question in exam.examQuestionHeaderList)
+                            {
+                                question.ExamId = examId;
+                                question.ExamineeId = examinee.ExamineeId;
+
+                                var questionResult = await _repo.QuestionInsert(question, conn, transaction);
+                                if (questionResult.Status != "Success")
+                                    throw new Exception(questionResult.Message);
+                            }
+                        }
+                    }
+                }
+
+                /* -------------------- 5. Insert Option & Short Answer Details -------------------- */
+                var detailsResultFinal = await _repo.InsertExamQuestionDetails(examId, conn, transaction);
+                if (detailsResultFinal.Status != "Success")
+                    throw new Exception(detailsResultFinal.Message);
+
+                transaction.Commit();
+
+                result.Status = "Success";
+                result.Message = "Exam updated successfully.";
                 return result;
             }
             catch (Exception ex)
             {
-                if (transaction != null && isNewConnection) transaction.Rollback();
+                if (transaction != null && isNewConnection)
+                    transaction.Rollback();
+
+                result.Status = "Fail";
                 result.Message = ex.Message;
                 result.ExMessage = ex.ToString();
                 return result;
             }
             finally
             {
-                if (isNewConnection && conn != null) conn.Close();
+                if (isNewConnection && conn != null)
+                    conn.Close();
             }
         }
 
-        // Delete (Archive) Method
         public async Task<ResultVM> Delete(CommonVM vm)
         {
             ExamRepository _repo = new ExamRepository();

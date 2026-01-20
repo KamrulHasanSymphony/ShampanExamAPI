@@ -457,6 +457,75 @@ namespace ShampanExam.Repository.Question
                     {
                         exam.automatedExamDetailList = listt;
                     }
+
+                    string newexamineequery = @"
+                    Select
+                    ISNULL(E.Id,0) Id,
+                    ISNULL(E.ExamineeId,0) ExamineeId,
+                    ISNULL(Ex.Name,'') Name
+                    from ExamExaminees E
+                    LEFT OUTER JOIN Examinees Ex ON E.ExamineeId = Ex.Id
+                    WHERE 1=1 AND E.ExamId = @ExamId";
+
+                    //newquery = ApplyConditions(newquery, new[] { "ExamId" }, conditionalValues, false);
+
+                    DataTable dt3 = new DataTable();
+
+                    adapter = CreateAdapter(newexamineequery, conn, transaction);
+                    adapter.SelectCommand.Parameters.AddWithValue("@ExamId", conditionalValues[0]);
+                    adapter.Fill(dt3);
+
+                    var listexaminee = dt3.AsEnumerable().Select(row => new ExamExamineeVM
+                    {
+                        Id = row.Field<int>("Id"),
+                        ExamineeId = row.Field<int>("ExamineeId"),
+                        Name = row.Field<string>("Name")
+                    }).ToList();
+
+
+                    // Assign the details to each exam (if needed for all exams)
+                    foreach (var exam in list)
+                    {
+                        exam.examExamineeList = listexaminee;
+                    }
+
+                    string newquestionquery = @"
+                    Select
+                    ISNULL(Id,0) Id,
+                    ISNULL(ExamId,0) ExamId,
+                    ISNULL(ExamineeId,0) ExamineeId,
+                    ISNULL(QuestionHeaderId,0) QuestionHeaderId,
+                    ISNULL(QuestionText,'') QuestionText,
+                    ISNULL(QuestionType,'') QuestionType,
+                    ISNULL(QuestionMark,'') QuestionMark
+
+                    from ExamQuestionHeaders 
+                    WHERE ExamId = @ExamId ";
+
+                    //newquery = ApplyConditions(newquery, new[] { "ExamId" }, conditionalValues, false);
+
+                    DataTable dt4 = new DataTable();
+                    adapter = CreateAdapter(newquestionquery, conn, transaction);
+                    adapter.SelectCommand.Parameters.AddWithValue("@ExamId", conditionalValues[0]);
+                    adapter.Fill(dt4);
+
+                    var listquestion = dt4.AsEnumerable().Select(row => new ExamQuestionHeaderVM
+                    {
+                        Id = row.Field<int>("Id"),
+                        ExamId = row.Field<int>("ExamId"),
+                        ExamineeId = row.Field<int>("ExamineeId"),
+                        QuestionHeaderId = row.Field<int>("QuestionHeaderId"),
+                        QuestionText = row.Field<string>("QuestionText"),
+                        QuestionType = row.Field<string>("QuestionType"),
+                        QuestionMark = row.Field<int>("QuestionMark")
+                    }).ToList();
+
+                    // Assign the details to each exam (if needed for all exams)
+                    foreach (var exam in list)
+                    {
+                        exam.examQuestionHeaderList = listquestion;
+                    }
+
                 }
 
                 result.Status = "Success";
@@ -1137,17 +1206,15 @@ LEFT JOIN GradeDetails
             {
                 if (conn == null) throw new Exception("Database connection failed!");
 
-                var data = new GridEntity<AutomatedExamDetailsVM>();
+                var data = new GridEntity<ExamVM>();
                 if (options.vm.UserId != "" || options.vm.UserId != null)
                 {
                     string sqlQuery = @"
         -- Count
         SELECT COUNT(DISTINCT H.Id) AS totalcount
-                    from AutomatedExamDetails D
-                    LEFT OUTER JOIN Exams H ON D.AutomatedExamId = H.Id
-                    LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
+                    from Exams H
                     LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
-		            LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
+                    LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
         WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 AND( H.ExamType = 'Mock' OR H.ExamType is Not null)";
 
                     if (!string.IsNullOrEmpty(options.vm.UserId))
@@ -1157,24 +1224,17 @@ LEFT JOIN GradeDetails
                     sqlQuery += @"
            -- Data
       
-            SELECT
-                    ISNULL(H.Id,0)Id,
-                    ISNULL(E.ExamineeId,0)ExamineeId,
-                    ISNULL(H.Code,'') ExamCode,
-                    ISNULL(H.Name,'') ExamName,
-                    ISNULL(D.SubjectId,0) SubjectId,
-                    ISNULL(S.Name,'') SubjectName,
-                    ISNULL(D.NumberOfQuestion,0) NumberOfQuestion,
-                    ISNULL(D.QuestionType,'') QuestionType,
-                    ISNULL(D.QuestionMark,0) QuestionMark,
-                    ISNULL(H.ExamType,'') ExamType
+          Select
+		  ISNULL(H.Id,0)Id,
+          ISNULL(H.Code,'') Code,
+		  ISNULL(H.Name,'') Name,
+		  ISNULL(H.Date,'') Date,
+		  CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
 
-
-                    from AutomatedExamDetails D
-                    LEFT OUTER JOIN Exams H ON D.AutomatedExamId = H.Id
-                    LEFT OUTER JOIN QuestionSubjects S ON D.SubjectId = S.Id
-                    LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
-		            LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
+ 
+            from Exams H  
+            LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
+            LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
             WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 AND( H.ExamType = 'Mock' OR H.ExamType is Not null)
         
         ";
@@ -1183,7 +1243,7 @@ LEFT JOIN GradeDetails
                         sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
                     }
 
-                    data = KendoGrid<AutomatedExamDetailsVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+                    data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
                 }
                 result.Status = "Success";
                 result.Message = "Exams grid data retrieved successfully.";
@@ -1387,6 +1447,68 @@ LEFT JOIN GradeDetails
 
                 result.Status = "Success";
                 result.Message = "Exam question option and short-answer details inserted successfully.";
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
+
+        public async Task<ResultVM> RandomQuestionInsert(ExamQuestionHeaderVM question, SqlConnection conn, SqlTransaction transaction)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+                if (transaction == null) transaction = conn.BeginTransaction();
+
+                string query = @"
+INSERT INTO ExamQuestionHeaders (
+    ExamId, ExamineeId, QuestionHeaderId,
+    QuestionText, QuestionType, QuestionMark, MarkObtain
+)
+SELECT TOP (@NoOfQuestion)
+    @ExamId, 
+    @ExamineeId, 
+    QH.Id,
+    QH.QuestionText,
+    QH.QuestionType,
+    QH.QuestionMark,
+    0
+FROM QuestionHeaders QH
+WHERE QH.QuestionSubjectId = @QuestionSubjectId
+  AND QH.QuestionType = @QuestionType
+  AND NOT EXISTS (
+      SELECT 1 FROM ExamQuestionHeaders EQH
+      WHERE EQH.ExamId = @ExamId 
+        AND EQH.ExamineeId = @ExamineeId
+        AND EQH.QuestionHeaderId = QH.Id
+  )
+GROUP BY QH.Id, QH.QuestionText, QH.QuestionType, QH.QuestionMark
+ORDER BY NEWID();
+SELECT SCOPE_IDENTITY();";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@ExamId", question.ExamId);
+                    cmd.Parameters.AddWithValue("@ExamineeId", question.ExamineeId);
+                    cmd.Parameters.AddWithValue("@QuestionSubjectId", question.QuestionSubjectId);
+                    cmd.Parameters.AddWithValue("@QuestionType", question.QuestionType);
+                    cmd.Parameters.AddWithValue("@NoOfQuestion", question.NumberOfQuestion);
+
+                    object resultObj = await cmd.ExecuteScalarAsync();
+                    question.Id = resultObj != DBNull.Value ? Convert.ToInt32(resultObj) : 0;
+                }
+
+                result.Status = "Success";
+                result.Message = "Random questions inserted successfully.";
+                result.Id = question.Id.ToString();
+                result.DataVM = question;
 
                 return result;
             }
