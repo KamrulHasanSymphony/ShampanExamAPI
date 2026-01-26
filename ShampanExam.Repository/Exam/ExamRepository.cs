@@ -486,12 +486,38 @@ namespace ShampanExam.Repository.Exam
             {
                 if (conn == null) throw new Exception("Database connection failed!");
 
-                string query = @"
-                UPDATE ExamQuestionHeaders 
-                SET 
-                    IsExamSubmitted = 1
+                //string query = @"
+                //UPDATE ExamQuestionHeaders 
+                //SET 
+                //    IsExamSubmitted = 1
                     
-                WHERE ExamineeId = @ExamineeId and ExamId=@ExamId";
+                //WHERE ExamineeId = @ExamineeId and ExamId=@ExamId";
+
+                string query = @"
+                UPDATE H
+                SET
+                    H.MarkObtain =
+                        CASE
+                            WHEN EXISTS (
+                                SELECT 1
+                                FROM ExamQuestionOptionDetails D
+                                WHERE
+                                    D.ExamId = H.ExamId
+                                    AND D.ExamQuestionHeaderId = H.Id
+                                    AND D.ExamineeAnswer = 1
+                                    AND D.QuestionAnswer = 1
+                            )
+                            THEN H.QuestionMark
+                            ELSE 0
+                        END,
+                    H.IsExamSubmitted = 1,   
+                    H.IsExamMarksSubmitted = 1
+
+                FROM ExamQuestionHeaders H
+                WHERE
+                    H.ExamId = @ExamId
+                    AND H.ExamineeId = @ExamineeId;
+                ";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
                 {

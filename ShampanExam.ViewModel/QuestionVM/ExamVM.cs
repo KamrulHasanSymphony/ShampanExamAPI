@@ -19,7 +19,7 @@ namespace ShampanExam.ViewModel.QuestionVM
         public bool IsExamByQuestionSet { get; set; }
         public int? QuestionSetId { get; set; }
         public int? ExamineeGroupId { get; set; }
-        public int? ExamineeId { get; set; }
+        public long? ExamineeId { get; set; }
         public string? ExamineeName { get; set; }
         public bool IsExamMarksSubmitted { get; set; }
         public int? BranchId { get; set; }

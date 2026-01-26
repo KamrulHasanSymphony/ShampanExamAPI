@@ -362,7 +362,7 @@ namespace ShampanExam.Repository.Exam
                 {
                     cmd.Parameters.AddWithValue("@ExamineeId", vm.ExamineeId);
                     cmd.Parameters.AddWithValue("@ExamId", vm.ExamId);
-                    cmd.Parameters.AddWithValue("@IsExamMarksSubmitted", true);
+                    cmd.Parameters.AddWithValue("@IsExamMarksSubmitted", 1);
 
 
                     int rows = cmd.ExecuteNonQuery();

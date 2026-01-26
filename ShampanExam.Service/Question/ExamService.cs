@@ -118,7 +118,7 @@ namespace ShampanExam.Service.Question
                                 {
                                     question.ExamId = examId;
                                     question.ExamineeId = examinee.ExamineeId;
-
+                                    question.QuestionSetId = exam.QuestionSetId;
                                     var questionResult = await _repo.QuestionInsert(question, conn, transaction);
                                     if (questionResult.Status != "Success")
                                         throw new Exception(questionResult.Message);
@@ -156,7 +156,84 @@ namespace ShampanExam.Service.Question
             }
         }
 
+        // Insert Method
+        public async Task<ResultVM> SelfInsert(ExamVM exam)
+        {
+            string CodeGroup = "Exam";
+            string CodeName = "Exam";
+            ExamRepository _repo = new ExamRepository();
+            _commonRepo = new CommonRepository();
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
+            bool isNewConnection = false;
+            SqlConnection conn = null;
+            SqlTransaction transaction = null;
+            CommonVM commonVM = new CommonVM();
+
+            commonVM.Group = "Exam";
+            commonVM.Name = "Exam";
+
+            _commonRepo = new CommonRepository();
+            try
+            {
+                conn = new SqlConnection(DatabaseHelper.GetConnectionStringQuestion());
+                conn.Open();
+                isNewConnection = true;
+                transaction = conn.BeginTransaction();
+
+
+
+                string code = _commonRepo.GenerateCode(CodeGroup, CodeName, exam.Date, exam.BranchId, conn, transaction);
+
+                if (!string.IsNullOrEmpty(code))
+                {
+                    exam.Code = code;
+
+
+                    result = await _repo.SelfInsert(exam, conn, transaction);
+                    if (result.Status == "Success")
+                    {
+                        foreach (var item in exam.automatedExamDetailList)
+                        {
+                            item.Id = Convert.ToInt32(result.Id);
+                            var resultt = await _repo.DetailsInsert(item, conn, transaction);
+                            if (result.Status != "Success")
+                            {
+                                throw new Exception(resultt.Message);
+                            }
+
+                        }
+                        if (isNewConnection && result.Status == "Success")
+                        {
+                            transaction.Commit();
+                        }
+                        else
+                        {
+                            throw new Exception(result.Message);
+                        }
+
+                    }
+
+                }
+                else
+                {
+                    throw new Exception("Code Generation Failed!");
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                if (transaction != null && isNewConnection) transaction.Rollback();
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                result.Code = exam.Code;
+                return result;
+            }
+            finally
+            {
+                if (isNewConnection && conn != null) conn.Close();
+            }
+        }
         public async Task<ResultVM> Update(ExamVM exam)
         {
             ExamRepository _repo = new ExamRepository();

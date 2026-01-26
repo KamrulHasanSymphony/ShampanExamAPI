@@ -77,7 +77,64 @@ namespace ShampanExam.Repository.Question
                 return result;
             }
         }
+        public async Task<ResultVM> SelfInsert(ExamVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
+        {
+            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
+            try
+            {
+                if (conn == null) throw new Exception("Database connection failed!");
+                if (transaction == null) transaction = conn.BeginTransaction();
+
+                string query = @"
+                INSERT INTO Exams
+                (
+                    Code, Name, Date, Time, Duration, TotalMark, GradeId, Remarks, IsExamByQuestionSet, 
+                    QuestionSetId, ExamineeGroupId, IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt,ExamType
+                )
+                VALUES
+                (
+                    @Code, @Name, @Date, @Time, @Duration, @TotalMark, @GradeId, @Remarks, @IsExamByQuestionSet, 
+                    @QuestionSetId, @ExamineeGroupId, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE(),@ExamType
+                );
+                SELECT SCOPE_IDENTITY();";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@Code", vm.Code ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Date", vm.Date ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Time", vm.Time ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Duration", vm.Duration);
+                    cmd.Parameters.AddWithValue("@TotalMark", vm.TotalMark);
+                    cmd.Parameters.AddWithValue("@GradeId", vm.GradeId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@IsExamByQuestionSet", vm.IsExamByQuestionSet);
+                    cmd.Parameters.AddWithValue("@QuestionSetId", vm.QuestionSetId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ExamineeGroupId", vm.ExamineeGroupId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
+                    cmd.Parameters.AddWithValue("@IsArchive", vm.IsArchive);
+                    cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@CreatedFrom", vm.CreatedFrom ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ExamType", "Mock");
+
+                    vm.Id = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                result.Status = "Success";
+                result.Message = "Exam inserted successfully.";
+                result.Id = vm.Id.ToString();
+                result.DataVM = vm;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+                result.ExMessage = ex.ToString();
+                return result;
+            }
+        }
         public async Task<ResultVM> DetailsInsert(AutomatedExamDetailsVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
         {
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
@@ -494,6 +551,8 @@ namespace ShampanExam.Repository.Question
                     ISNULL(Id,0) Id,
                     ISNULL(ExamId,0) ExamId,
                     ISNULL(ExamineeId,0) ExamineeId,
+                    ISNULL(IsExamSubmitted,0) IsExamSubmitted,
+                    ISNULL(IsExamMarksSubmitted,0) IsExamMarksSubmitted,
                     ISNULL(QuestionHeaderId,0) QuestionHeaderId,
                     ISNULL(QuestionText,'') QuestionText,
                     ISNULL(QuestionType,'') QuestionType,
@@ -1207,48 +1266,59 @@ LEFT JOIN GradeDetails
                 if (conn == null) throw new Exception("Database connection failed!");
 
                 var data = new GridEntity<ExamVM>();
-                if (options.vm.UserId != "" || options.vm.UserId != null)
+
+                string sqlQuery = @"
+                -- Count
+                SELECT COUNT(DISTINCT H.Id) AS totalcount
+                FROM Exams H
+            left outer join ExamQuestionHeaders Q ON H.Id = Q.ExamId
+            --LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
+            LEFT OUTER JOIN Examinees E ON Q.ExamineeId = E.Id
+            LEFT OUTER JOIN Users U ON E.Id = U.Id
+            WHERE H.IsArchive != 1 
+              AND H.IsActive = 1 
+              AND H.ExamineeGroupId = 0 
+              AND (H.ExamType = 'Mock' OR H.ExamType IS NOT NULL)
+                ";
+
+                // ✅ Apply User filter only if UserId is NOT "erp"
+                if (!string.IsNullOrEmpty(options.vm.UserId) && options.vm.UserId.ToLower() != "erp")
                 {
-                    string sqlQuery = @"
-        -- Count
-        SELECT COUNT(DISTINCT H.Id) AS totalcount
-                    from Exams H
-                    LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
-                    LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
-        WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 AND( H.ExamType = 'Mock' OR H.ExamType is Not null)";
-
-                    if (!string.IsNullOrEmpty(options.vm.UserId))
-                    {
-                        sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
-                    }
-                    sqlQuery += @"
-           -- Data
-      
-          Select
-		  ISNULL(H.Id,0)Id,
-          ISNULL(H.Code,'') Code,
-		  ISNULL(H.Name,'') Name,
-		  ISNULL(H.Date,'') Date,
-		  CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
-
- 
-            from Exams H  
-            LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
-            LEFT OUTER JOIN Users U ON E.ExamineeId = U.Id
-            WHERE H.IsArchive != 1 AND H.IsActive = 1 AND H.ExamineeGroupId = 0 AND( H.ExamType = 'Mock' OR H.ExamType is Not null)
-        
-        ";
-                    if (!string.IsNullOrEmpty(options.vm.UserId))
-                    {
-                        sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
-                    }
-
-                    data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+                    sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
                 }
+
+                sqlQuery += @"
+                -- Data
+                    SELECT DISTINCT
+                    ISNULL(H.Id,0) AS Id,
+                    ISNULL(H.Code,'') AS Code,
+                    ISNULL(H.Name,'') AS Name,
+                    ISNULL(H.Date,'') AS Date,
+                    CAST(Q.ExamineeId AS BIGINT) AS ExamineeId,                  
+                    ISNULL(U.Name,'') AS ExamineeName,
+                    CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
+                 FROM Exams H
+                left outer join ExamQuestionHeaders Q ON H.Id = Q.ExamId
+                --LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
+                LEFT OUTER JOIN Examinees E ON Q.ExamineeId = E.Id
+                LEFT OUTER JOIN Users U ON E.LogInId = U.Id
+                WHERE H.IsArchive != 1 
+                  AND H.IsActive = 1 
+                  AND H.ExamineeGroupId = 0 
+                  AND (H.ExamType = 'Mock' OR H.ExamType IS NOT NULL)
+                ";
+
+                // ✅ Same logic for data query
+                if (!string.IsNullOrEmpty(options.vm.UserId) && options.vm.UserId.ToLower() != "erp")
+                {
+                    sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
+                }
+
+                data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+
                 result.Status = "Success";
                 result.Message = "Exams grid data retrieved successfully.";
                 result.DataVM = data;
-
                 return result;
             }
             catch (Exception ex)
@@ -1258,6 +1328,7 @@ LEFT JOIN GradeDetails
                 return result;
             }
         }
+
 
         public async Task<ResultVM> ExamineeInsert(ExamExamineeVM examinee, SqlConnection conn, SqlTransaction transaction)
         {

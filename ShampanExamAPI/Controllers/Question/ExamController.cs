@@ -37,6 +37,23 @@ namespace ShampanExamAPI.Controllers.Question
             }
         }
 
+        // POST: api/Exam/SelfInsert
+        [HttpPost("SelfInsert")]
+        public async Task<ResultVM> SelfInsert(ExamVM exam)
+        {
+            ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error" };
+            try
+            {
+                _examService = new ExamService();
+                resultVM = await _examService.SelfInsert(exam);
+                return resultVM;
+            }
+            catch (Exception ex)
+            {
+                return new ResultVM { Status = "Fail", Message = ex.Message, ExMessage = ex.Message, DataVM = exam };
+            }
+        }
+
         // POST: api/Exam/Update
         [HttpPost("Update")]
         public async Task<ResultVM> Update(ExamVM exam)

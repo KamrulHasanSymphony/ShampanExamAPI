@@ -384,60 +384,75 @@ namespace ShampanExam.Repository.Question
                 return result;
             }
         }
-
-        public async Task<ResultVM> GetExameelistGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
+        public async Task<ResultVM> GetExameelistGridData(GridOptions options,SqlConnection conn = null, SqlTransaction transaction = null)
         {
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
             try
             {
-                if (conn == null) throw new Exception("Database connection failed!");
+                if (conn == null)
+                    throw new Exception("Database connection failed!");
 
                 var data = new GridEntity<ExamVM>();
+
                 if (options.vm != null && Convert.ToInt32(options.vm.Id) > 0)
                 {
                     string sqlQuery = @"
-        -- Count
-        SELECT COUNT(DISTINCT H.Id) AS totalcount
-        FROM Exams H
-left outer join ExamQuestionHeaders EQ on H.id=EQ.ExamId
+                    -- Count
+                    SELECT COUNT(DISTINCT H.Id) AS totalcount
+                    FROM Exams H
+                    INNER JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
+                    WHERE H.IsArchive != 1
+                      AND (H.ExamType != 'Mock' OR H.ExamType IS NULL)
+                      AND EQ.ExamineeId = " + Convert.ToInt32(options.vm.Id) + @"
 
-        WHERE H.IsArchive != 1 AND( H.ExamType != 'Mock' OR H.ExamType is null)";
+                    -- Data
+                    SELECT *
+                    FROM (
+                        SELECT
+                            ROW_NUMBER() OVER (
+                                ORDER BY " +
+                                    (options.sort.Count > 0
+                                        ? options.sort[0].field + " " + options.sort[0].dir
+                                        : "Id DESC") + @"
+                            ) AS rowindex,
+                            *
+                        FROM (
+                            SELECT DISTINCT
+                                H.Id,
+                                H.Code,
+                                H.Name,
+                                H.Date,
+                                H.Time,
+                                H.Duration,
+                                H.TotalMark,
+                                H.Remarks,
+                                CAST(EQ.ExamineeId AS BIGINT) AS ExamineeId,
+                                E.Name AS ExamineeName,
+                                CASE 
+                                    WHEN ISNULL(H.IsActive,0) = 1 THEN 'Active'
+                                    ELSE 'Inactive'
+                                END AS Status
+                            FROM Exams H
+                            INNER JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
+                            LEFT JOIN Examinees E ON E.Id = EQ.ExamineeId
+                            WHERE H.IsArchive != 1
+                              AND (H.ExamType != 'Mock' OR H.ExamType IS NULL)
+                              AND EQ.ExamineeId = " + Convert.ToInt32(options.vm.Id) + @"
+                        ) d
+                    ) a
+                    WHERE rowindex > @skip
+                      AND (@take = 0 OR rowindex <= (@skip + @take));
+                    ";
 
-                    if (options.vm != null && Convert.ToInt32(options.vm.Id) > 0)
-                    {
-                        sqlQuery += @" and EQ.ExamineeId=" + Convert.ToInt32(options.vm.Id);
-                    }
-                    sqlQuery += @"
-           -- Data
-      
-            SELECT
-       distinct  ISNULL(H.Id,0) AS Id,
-       ISNULL(H.Code, '') AS Code,
-       ISNULL(H.Name, '') AS Name,
-       ISNULL(H.Date, '') AS Date,
-       ISNULL(H.Time, '') AS Time,
-       ISNULL(H.Duration, 0) AS Duration,
-       ISNULL(H.TotalMark, 0) AS TotalMark,
-       ISNULL(H.Remarks, '') AS Remarks,
-	   EQ.ExamineeId,
-	   E.Name ExamineeName,
 
-       CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
- 
-FROM Exams H
-left outer join ExamQuestionHeaders EQ on H.id=EQ.ExamId
-left outer join Examinees E on E.id=EQ.ExamineeId
-WHERE H.IsArchive != 1 AND( H.ExamType != 'Mock' OR H.ExamType is null)
-        
-        ";
-                    if (options.vm != null && Convert.ToInt32(options.vm.Id) > 0)
-                    {
-                        sqlQuery += @" and EQ.ExamineeId=" + Convert.ToInt32(options.vm.Id);
-                    }
-
-                    data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+                    data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(
+                        options,
+                        sqlQuery,
+                        "H.Id"
+                    );
                 }
+
                 result.Status = "Success";
                 result.Message = "Exams grid data retrieved successfully.";
                 result.DataVM = data;
@@ -451,6 +466,73 @@ WHERE H.IsArchive != 1 AND( H.ExamType != 'Mock' OR H.ExamType is null)
                 return result;
             }
         }
+
+        //        public async Task<ResultVM> GetExameelistGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
+        //        {
+        //            ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+        //            try
+        //            {
+        //                if (conn == null) throw new Exception("Database connection failed!");
+
+        //                var data = new GridEntity<ExamVM>();
+        //                if (options.vm != null && Convert.ToInt32(options.vm.Id) > 0)
+        //                {
+        //                    string sqlQuery = @"
+        //        -- Count
+        //        SELECT COUNT(DISTINCT H.Id) AS totalcount
+        //        FROM Exams H
+        //left outer join ExamQuestionHeaders EQ on H.id=EQ.ExamId
+
+        //        WHERE H.IsArchive != 1 AND( H.ExamType != 'Mock' OR H.ExamType is null)";
+
+        //                    if (options.vm != null && Convert.ToInt32(options.vm.Id) > 0)
+        //                    {
+        //                        sqlQuery += @" and EQ.ExamineeId=" + Convert.ToInt32(options.vm.Id);
+        //                    }
+        //                    sqlQuery += @"
+        //           -- Data
+
+        //            SELECT
+        //       distinct  ISNULL(H.Id,0) AS Id,
+        //       ISNULL(H.Code, '') AS Code,
+        //       ISNULL(H.Name, '') AS Name,
+        //       ISNULL(H.Date, '') AS Date,
+        //       ISNULL(H.Time, '') AS Time,
+        //       ISNULL(H.Duration, 0) AS Duration,
+        //       ISNULL(H.TotalMark, 0) AS TotalMark,
+        //       ISNULL(H.Remarks, '') AS Remarks,
+        //	   EQ.ExamineeId,
+        //	   E.Name ExamineeName,
+
+        //       CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
+
+        //FROM Exams H
+        //left outer join ExamQuestionHeaders EQ on H.id=EQ.ExamId
+        //left outer join Examinees E on E.id=EQ.ExamineeId
+        //WHERE H.IsArchive != 1 AND( H.ExamType != 'Mock' OR H.ExamType is null)
+
+        //        ";
+        //                    if (options.vm != null && Convert.ToInt32(options.vm.Id) > 0)
+        //                    {
+        //                        sqlQuery += @" and EQ.ExamineeId=" + Convert.ToInt32(options.vm.Id);
+        //                    }
+
+        //                    data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+        //                }
+        //                result.Status = "Success";
+        //                result.Message = "Exams grid data retrieved successfully.";
+        //                result.DataVM = data;
+
+        //                return result;
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                result.Message = ex.Message;
+        //                result.ExMessage = ex.ToString();
+        //                return result;
+        //            }
+        //        }
 
         public async Task<ResultVM> GetExameeAlllistGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
         {
@@ -484,7 +566,7 @@ SELECT
     ISNULL(SUM(EQ.MarkObtain), 0) AS MarkObtain,
     ISNULL(H.Remarks, '') AS Remarks,
     ISNULL(EQ.IsExamMarksSubmitted, 0) AS IsExamMarksSubmitted,
-    EQ.ExamineeId,
+    CAST(EQ.ExamineeId AS BIGINT) AS ExamineeId,
     E.Name AS ExamineeName,
     CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
 FROM Exams H
@@ -587,73 +669,173 @@ GROUP BY
                 return result;
             }
         }
-
-        public async Task<ResultVM> GetExameeSelflistGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
+        public async Task<ResultVM> GetExameeSelflistGridData(GridOptions options,SqlConnection conn = null,SqlTransaction transaction = null)
         {
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
 
             try
             {
-                if (conn == null) throw new Exception("Database connection failed!");
+                if (options == null || options.vm == null || Convert.ToInt32(options.vm.Id) <= 0)
+                    throw new Exception("Invalid Examinee");
 
-                var data = new GridEntity<ExamVM>();
+                int examineeId = Convert.ToInt32(options.vm.Id);
+                int skip = options.skip;
+                int take = options.take;
+
+                string orderBy = (options.sort != null && options.sort.Count > 0)
+                    ? options.sort[0].field + " " + options.sort[0].dir
+                    : "H.Id DESC";
 
                 string sqlQuery = @"
-        -- Count
-        SELECT COUNT(DISTINCT H.Id) AS totalcount
-        FROM Exams H
-left outer join ExamQuestionHeaders EQ on H.id=EQ.ExamId
-
-        WHERE H.IsArchive <> 1
-  AND EQ.IsExamSubmitted = 1
-AND( H.ExamType = 'Mock' OR H.ExamType is Not null)";
-
-
-                sqlQuery += @"
-      
-SELECT
-    ISNULL(H.Id, 0) AS Id,
-    ISNULL(H.Code, '') AS Code,
-    ISNULL(H.Name, '') AS Name,
-    ISNULL(H.Date, '') AS Date,
-    ISNULL(H.Time, '') AS Time,
-    ISNULL(H.Duration, 0) AS Duration,
-    ISNULL(H.TotalMark, 0) AS TotalMark,
-    ISNULL(SUM(EQ.MarkObtain), 0) AS MarkObtain,
-    ISNULL(H.Remarks, '') AS Remarks,
-    ISNULL(EQ.IsExamMarksSubmitted, 0) AS IsExamMarksSubmitted,
-    EQ.ExamineeId,
-    E.Name AS ExamineeName,
-    CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
+-- ================= COUNT =================
+SELECT COUNT(DISTINCT H.Id) AS totalcount
 FROM Exams H
 LEFT JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
-LEFT JOIN Examinees E ON E.Id = EQ.ExamineeId
 WHERE H.IsArchive <> 1
-  AND EQ.IsExamSubmitted = 1
-AND( H.ExamType = 'Mock' OR H.ExamType is Not null)
-GROUP BY
-    H.Id, H.Code, H.Name, H.Date, H.Time, H.Duration, H.TotalMark,IsExamMarksSubmitted,
-    H.Remarks, H.IsActive,
-    EQ.ExamineeId, E.Name
+  AND (H.ExamType = 'Mock' OR H.ExamType IS NOT NULL)
+  AND EQ.ExamineeId = " + examineeId + @";
 
+-- ================= DATA =================
+SELECT *
+FROM (
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY " + orderBy + @") AS rowindex,
 
-        
-        ";
+        ISNULL(H.Id, 0) AS Id,
+        ISNULL(H.Code, '') AS Code,
+        ISNULL(H.Name, '') AS Name,
+        ISNULL(H.Date, '') AS Date,
+        ISNULL(H.Time, '') AS Time,
+        ISNULL(H.Duration, 0) AS Duration,
+        ISNULL(H.TotalMark, 0) AS TotalMark,
+        ISNULL(SUM(EQ.MarkObtain), 0) AS MarkObtain,
+ISNULL(
+    MAX(CAST(EQ.IsExamMarksSubmitted AS INT)),
+    0
+) AS IsExamMarksSubmitted,
+        ISNULL(H.Remarks, '') AS Remarks,
+        CAST(EQ.ExamineeId AS BIGINT) AS ExamineeId,
+        E.Name AS ExamineeName,
+        CASE 
+            WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active'
+            ELSE 'Inactive'
+        END AS Status
+    FROM Exams H
+    LEFT JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
+    LEFT JOIN Examinees E ON E.Id = EQ.ExamineeId
+    WHERE H.IsArchive <> 1
+      AND (H.ExamType = 'Mock' OR H.ExamType IS NOT NULL)
+      AND EQ.ExamineeId = " + examineeId + @"
+    GROUP BY
+        H.Id, H.Code, H.Name, H.Date, H.Time,
+        H.Duration, H.TotalMark, H.Remarks,
+        H.IsActive, EQ.ExamineeId, E.Name
+) AS a
+WHERE rowindex > " + skip + @"
+  AND (" + take + @" = 0 OR rowindex <= (" + skip + @" + " + take + @"));
+";
 
-                data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+                var data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(
+                    sqlQuery,
+                    orderBy
+                );
+
                 result.Status = "Success";
                 result.Message = "Exams grid data retrieved successfully.";
                 result.DataVM = data;
-
-                return result;
             }
             catch (Exception ex)
             {
                 result.Message = ex.Message;
                 result.ExMessage = ex.ToString();
-                return result;
             }
+
+            return result;
         }
+
+
+
+        //public async Task<ResultVM> GetExameeSelflistGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
+        //{
+        //    ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+        //    try
+        //    {
+        //        if (conn == null)
+        //            throw new Exception("Database connection failed!");
+
+        //        var data = new GridEntity<ExamVM>();
+
+        //        if (options.vm != null && Convert.ToInt32(options.vm.Id) > 0)
+        //        {
+        //            string sqlQuery = @"
+        //    -- Count
+        //    SELECT COUNT(DISTINCT H.Id) AS totalcount
+        //    FROM Exams H
+        //    LEFT JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
+        //    WHERE H.IsArchive != 1
+        //      AND (H.ExamType == 'Mock' OR H.ExamType is Not null)
+        //      AND EQ.ExamineeId = " + Convert.ToInt32(options.vm.Id) + @"
+
+        //    -- Data
+        //    SELECT *
+        //    FROM (
+        //        SELECT
+        //            ROW_NUMBER() OVER (
+        //                ORDER BY " +
+        //                        (options.sort.Count > 0
+        //                            ? options.sort[0].field + " " + options.sort[0].dir
+        //                            : "H.Id DESC") + @"
+        //            ) AS rowindex,
+
+        //            ISNULL(H.Id,0) AS Id,
+        //            ISNULL(H.Code,'') AS Code,
+        //            ISNULL(H.Name,'') AS Name,
+        //            ISNULL(H.Date,'') AS Date,
+        //            ISNULL(H.Time,'') AS Time,
+        //            ISNULL(H.Duration,0) AS Duration,
+        //            ISNULL(H.TotalMark,0) AS TotalMark,
+        //            ISNULL(SUM(EQ.MarkObtain), 0) AS MarkObtain,
+        //            ISNULL(H.Remarks,'') AS Remarks,
+        //            ISNULL(EQ.IsExamMarksSubmitted, 0) AS IsExamMarksSubmitted,
+        //            CAST(EQ.ExamineeId AS BIGINT) AS ExamineeId,
+        //            E.Name AS ExamineeName,
+        //            CASE 
+        //                WHEN ISNULL(H.IsActive,0) = 1 THEN 'Active' 
+        //                ELSE 'Inactive' 
+        //            END AS Status
+
+        //        FROM Exams H
+        //        LEFT JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
+        //        LEFT JOIN Examinees E ON E.Id = EQ.ExamineeId
+        //        WHERE H.IsArchive != 1
+        //          AND (H.ExamType == 'Mock' OR H.ExamType is Not null)
+        //          AND EQ.ExamineeId = " + Convert.ToInt32(options.vm.Id) + @"
+        //    ) AS a
+        //    WHERE rowindex > @skip
+        //      AND (@take = 0 OR rowindex <= (@skip + @take))
+        //    ";
+
+        //            data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(
+        //                options,
+        //                sqlQuery,
+        //                "H.Id"
+        //            );
+        //        }
+
+        //        result.Status = "Success";
+        //        result.Message = "Exams grid data retrieved successfully.";
+        //        result.DataVM = data;
+
+        //        return result;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Message = ex.Message;
+        //        result.ExMessage = ex.ToString();
+        //        return result;
+        //    }
+
+        //}
 
 
         public async Task<ResultVM> GetExamineeGridData(GridOptions options, string[] conditionalFields, string[] conditionalValues, SqlConnection conn, SqlTransaction transaction)
