@@ -11,6 +11,8 @@ namespace ShampanExam.ViewModel.QuestionVM
         public int? TotalMark { get; set; }
         public string? Remarks { get; set; }
 
+        public int? QuestionChapterId { get; set; }
+        public int? QuestionSubjectId { get; set; }
         public PeramModel PeramModel { get; set; }
 
 

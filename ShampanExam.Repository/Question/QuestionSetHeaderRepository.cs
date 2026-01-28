@@ -123,18 +123,22 @@ namespace ShampanExam.Repository.Question
                 if (conn == null) throw new Exception("Database connection failed!");
 
                 string query = @"
-                SELECT 
-                    ISNULL(M.Id,0) AS Id, 
-                    ISNULL(M.Name,'') AS Name,
-                    ISNULL(M.TotalMark,0) AS TotalMark,
-                    ISNULL(M.Remarks,'') AS Remarks,
-                    ISNULL(M.IsActive,0) AS IsActive,
-                    ISNULL(M.IsArchive,0) AS IsArchive,
-                    ISNULL(M.CreatedBy,'') AS CreatedBy,
-                    ISNULL(FORMAT(M.CreatedAt,'yyyy-MM-dd HH:mm'),'') AS CreatedAt,
-                    ISNULL(M.LastUpdateBy,'') AS LastUpdateBy,
-                    ISNULL(FORMAT(M.LastUpdateAt,'yyyy-MM-dd HH:mm'),'') AS LastUpdateAt
-                FROM QuestionSetHeaders M
+                SELECT Distinct
+                ISNULL(M.Id,0) AS Id, 
+                ISNULL(Q.QuestionChapterId,0) AS QuestionChapterId, 
+                ISNULL(Q.QuestionSubjectId,0) AS QuestionSubjectId, 
+                ISNULL(M.Name,'') AS Name,
+                ISNULL(M.TotalMark,0) AS TotalMark,
+                ISNULL(M.Remarks,'') AS Remarks,
+                ISNULL(M.IsActive,0) AS IsActive,
+                ISNULL(M.IsArchive,0) AS IsArchive,
+                ISNULL(M.CreatedBy,'') AS CreatedBy,
+                ISNULL(FORMAT(M.CreatedAt,'yyyy-MM-dd HH:mm'),'') AS CreatedAt,
+                ISNULL(M.LastUpdateBy,'') AS LastUpdateBy,
+                ISNULL(FORMAT(M.LastUpdateAt,'yyyy-MM-dd HH:mm'),'') AS LastUpdateAt
+            FROM QuestionSetHeaders M
+            LEFT OUTER JOIN QuestionSetDetails D ON M.Id = D.QuestionSetHeaderId
+            LEFT OUTER JOIN QuestionHeaders Q ON D.QuestionHeaderId = Q.Id
                 WHERE 1=1";
 
                 if (vm != null && !string.IsNullOrEmpty(vm.Id))
@@ -153,6 +157,8 @@ namespace ShampanExam.Repository.Question
                 var list = dt.AsEnumerable().Select(row => new QuestionSetHeaderVM
                 {
                     Id = row.Field<int>("Id"),
+                    QuestionChapterId = row.Field<int>("QuestionChapterId"),
+                    QuestionSubjectId = row.Field<int>("QuestionSubjectId"),
                     Name = row.Field<string>("Name"),
                     TotalMark = row.Field<int>("TotalMark"),
                     Remarks = row.Field<string>("Remarks"),

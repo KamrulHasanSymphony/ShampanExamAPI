@@ -357,10 +357,11 @@ namespace ShampanExam.Repository.Question
                 string query = @"
                 SELECT Id, Name,Remarks
                 FROM QuestionChapters
-                WHERE IsActive = 1 AND IsArchive = 0
-                ORDER BY Name";
+                WHERE IsActive = 1 AND IsArchive = 0 ";
 
                 query = ApplyConditions(query, conditionalFields, conditionalValues, false);
+
+                query += " ORDER BY Name";
 
                 SqlDataAdapter objComm = CreateAdapter(query, conn, transaction);
 

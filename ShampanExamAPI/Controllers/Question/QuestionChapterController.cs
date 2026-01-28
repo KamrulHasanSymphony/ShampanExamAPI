@@ -107,7 +107,7 @@ namespace ShampanExamAPI.Controllers.Question
             ResultVM resultVM = new ResultVM { Status = "Fail", Message = "Error", ExMessage = null, Id = "0", DataVM = null };
             try
             {
-                resultVM = await _questionChapterService.Dropdown(new[] { "" }, new[] { "" }, null);
+                resultVM = await _questionChapterService.Dropdown(new[] { "QuestionSubjectId" }, new[] { Vm.Value }, null);
                 return resultVM;
             }
             catch (Exception ex)

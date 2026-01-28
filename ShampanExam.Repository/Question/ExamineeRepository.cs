@@ -202,8 +202,14 @@ namespace ShampanExam.Repository.Question
 
                 if (vm != null && !string.IsNullOrEmpty(vm.Id))
                     query += " AND M.Id=@Id ";
+                bool skipConditions =    conditionalValues != null && conditionalValues.Any(v => v.Equals("Erp", StringComparison.OrdinalIgnoreCase));
 
-                query = ApplyConditions(query, conditionalFields, conditionalValues, false);
+                if (!skipConditions)
+                {
+                    query = ApplyConditions(query, conditionalFields, conditionalValues, false);
+                }
+
+                //query = ApplyConditions(query, conditionalFields, conditionalValues, false);
 
                 SqlDataAdapter adapter = CreateAdapter(query, conn, transaction);
                 adapter.SelectCommand = ApplyParameters(adapter.SelectCommand, conditionalFields, conditionalValues);
