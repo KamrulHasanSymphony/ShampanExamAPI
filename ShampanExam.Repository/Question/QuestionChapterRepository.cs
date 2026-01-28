@@ -419,6 +419,7 @@ namespace ShampanExam.Repository.Question
                             : "H.Id DESC") + @") AS rowindex,
                            ISNULL(H.Id,0) AS Id,
                            ISNULL(H.Name,'') AS Name,
+                           ISNULL(S.Name,'') AS QuestionSubjectName,
                            ISNULL(H.NameInBangla,'') AS NameInBangla,
                            ISNULL(H.Remarks,'') AS Remarks,
                            ISNULL(H.IsActive,0) AS IsActive,
@@ -429,6 +430,8 @@ namespace ShampanExam.Repository.Question
                            ISNULL(H.LastUpdateBy,'') AS LastUpdateBy,
                            ISNULL(FORMAT(H.LastUpdateAt,'yyyy-MM-dd HH:mm'),'') AS LastUpdateAt
                     FROM QuestionChapters H
+                    LEFT OUTER JOIN QuestionSubjects S ON H.QuestionSubjectId = S.Id
+
                     WHERE H.IsArchive != 1
                     " + (options.filter.Filters.Count > 0
                             ? " AND (" + GridQueryBuilder<QuestionChapterVM>.FilterCondition(options.filter) + ")"
