@@ -87,7 +87,7 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@TotalMark", vm.TotalMark);
                     cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
+                    cmd.Parameters.AddWithValue("@IsActive", true);
                     cmd.Parameters.AddWithValue("@LastUpdateBy", vm.LastUpdateBy ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@LastUpdateFrom", vm.LastUpdateFrom ?? (object)DBNull.Value);
 
