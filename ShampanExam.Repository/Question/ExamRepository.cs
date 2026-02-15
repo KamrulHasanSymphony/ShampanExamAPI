@@ -1257,6 +1257,7 @@ LEFT JOIN GradeDetails
         //    return result;
         //}
 
+
         public async Task<ResultVM> GetRandomGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
         {
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
@@ -1267,58 +1268,63 @@ LEFT JOIN GradeDetails
 
                 var data = new GridEntity<ExamVM>();
 
-                string sqlQuery = @"
-                -- Count
-                SELECT COUNT(DISTINCT H.Id) AS totalcount
-                FROM Exams H
-            left outer join ExamQuestionHeaders Q ON H.Id = Q.ExamId
-            --LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
-            LEFT OUTER JOIN Examinees E ON Q.ExamineeId = E.Id
-            LEFT OUTER JOIN Users U ON E.Id = U.Id
-            WHERE H.IsArchive != 1 
-              AND H.IsActive = 1 
-              AND H.ExamineeGroupId = 0 
-              AND (H.ExamType = 'Mock' OR H.ExamType IS NOT NULL)
-                ";
+                string filterCondition = options.filter.Filters.Count > 0
+                    ? " AND (" + GridQueryBuilder<ExamVM>.FilterCondition(options.filter) + ")"
+                    : "";
 
-                // ✅ Apply User filter only if UserId is NOT "erp"
-                if (!string.IsNullOrEmpty(options.vm.UserId) && options.vm.UserId.ToLower() != "erp")
-                {
-                    sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
-                }
+                string orderBy = options.sort.Count > 0
+                    ? "H." + options.sort[0].field + " " + options.sort[0].dir
+                    : "H.Id DESC";
 
-                sqlQuery += @"
-                -- Data
-                    SELECT DISTINCT
-                    ISNULL(H.Id,0) AS Id,
-                    ISNULL(H.Code,'') AS Code,
-                    ISNULL(H.Name,'') AS Name,
-                    ISNULL(H.Date,'') AS Date,
-                    CAST(Q.ExamineeId AS BIGINT) AS ExamineeId,                  
-                    ISNULL(U.Name,'') AS ExamineeName,
-                    CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
-                 FROM Exams H
-                left outer join ExamQuestionHeaders Q ON H.Id = Q.ExamId
-                --LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
-                LEFT OUTER JOIN Examinees E ON Q.ExamineeId = E.Id
-                LEFT OUTER JOIN Users U ON E.LogInId = U.Id
-                WHERE H.IsArchive != 1 
-                  AND H.IsActive = 1 
-                  AND H.ExamineeGroupId = 0 
-                  AND (H.ExamType = 'Mock' OR H.ExamType IS NOT NULL)
-                ";
+                string sqlQuery = $@"
+-- Count
+SELECT COUNT(DISTINCT H.Id) AS totalcount
+FROM Exams H
+LEFT JOIN ExamQuestionHeaders Q ON H.Id = Q.ExamId
+LEFT JOIN Examinees E ON Q.ExamineeId = E.Id
+LEFT JOIN Users U ON E.LogInId = U.Id
+WHERE H.IsArchive != 1 
+  AND H.IsActive = 1 
+  AND H.ExamineeGroupId = 0 
+  AND H.ExamType = 'Mock'
+  {filterCondition}
 
-                // ✅ Same logic for data query
-                if (!string.IsNullOrEmpty(options.vm.UserId) && options.vm.UserId.ToLower() != "erp")
-                {
-                    sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
-                }
+-- Data
+;WITH ExamCTE AS
+(
+    SELECT DISTINCT
+        ROW_NUMBER() OVER(ORDER BY {orderBy}) AS rowindex,
+        ISNULL(H.Id,0) AS Id,
+        ISNULL(H.Code,'') AS Code,
+        ISNULL(H.Name,'') AS Name,
+        H.Date AS Date,
+        CAST(Q.ExamineeId AS BIGINT) AS ExamineeId,                  
+        ISNULL(U.Name,'') AS ExamineeName,
+        CASE WHEN ISNULL(H.IsActive, 0) = 1 
+             THEN 'Active' 
+             ELSE 'Inactive' 
+        END AS Status
+    FROM Exams H
+    LEFT JOIN ExamQuestionHeaders Q ON H.Id = Q.ExamId
+    LEFT JOIN Examinees E ON Q.ExamineeId = E.Id
+    LEFT JOIN Users U ON E.LogInId = U.Id
+    WHERE H.IsArchive != 1 
+      AND H.IsActive = 1 
+      AND H.ExamineeGroupId = 0 
+      AND H.ExamType = 'Mock'
+      {filterCondition}
+)
+SELECT *
+FROM ExamCTE
+WHERE rowindex > @skip 
+AND (@take = 0 OR rowindex <= @skip + @take);";
 
-                data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+                data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(options, sqlQuery, "Id");
 
                 result.Status = "Success";
                 result.Message = "Exams grid data retrieved successfully.";
                 result.DataVM = data;
+
                 return result;
             }
             catch (Exception ex)
@@ -1328,6 +1334,79 @@ LEFT JOIN GradeDetails
                 return result;
             }
         }
+
+
+        //public async Task<ResultVM> GetRandomGridData(GridOptions options, SqlConnection conn = null, SqlTransaction transaction = null)
+        //{
+        //    ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+        //    try
+        //    {
+        //        if (conn == null) throw new Exception("Database connection failed!");
+
+        //        var data = new GridEntity<ExamVM>();
+
+        //        string sqlQuery = @"
+        //        -- Count
+        //        SELECT COUNT(DISTINCT H.Id) AS totalcount
+        //        FROM Exams H
+        //    left outer join ExamQuestionHeaders Q ON H.Id = Q.ExamId
+        //    --LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
+        //    LEFT OUTER JOIN Examinees E ON Q.ExamineeId = E.Id
+        //    LEFT OUTER JOIN Users U ON E.Id = U.Id
+        //    WHERE H.IsArchive != 1 
+        //      AND H.IsActive = 1 
+        //      AND H.ExamineeGroupId = 0 
+        //      AND (H.ExamType = 'Mock' OR H.ExamType IS NOT NULL)
+        //        ";
+
+        //        // ✅ Apply User filter only if UserId is NOT "erp"
+        //        if (!string.IsNullOrEmpty(options.vm.UserId) && options.vm.UserId.ToLower() != "erp")
+        //        {
+        //            sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
+        //        }
+
+        //        sqlQuery += @"
+        //        -- Data
+        //            SELECT DISTINCT
+        //            ISNULL(H.Id,0) AS Id,
+        //            ISNULL(H.Code,'') AS Code,
+        //            ISNULL(H.Name,'') AS Name,
+        //            ISNULL(H.Date,'') AS Date,
+        //            CAST(Q.ExamineeId AS BIGINT) AS ExamineeId,                  
+        //            ISNULL(U.Name,'') AS ExamineeName,
+        //            CASE WHEN ISNULL(H.IsActive, 0) = 1 THEN 'Active' ELSE 'Inactive' END AS Status
+        //         FROM Exams H
+        //        left outer join ExamQuestionHeaders Q ON H.Id = Q.ExamId
+        //        --LEFT OUTER JOIN ExamExaminees E ON H.Id = E.ExamId
+        //        LEFT OUTER JOIN Examinees E ON Q.ExamineeId = E.Id
+        //        LEFT OUTER JOIN Users U ON E.LogInId = U.Id
+        //        WHERE H.IsArchive != 1 
+        //          AND H.IsActive = 1 
+        //          AND H.ExamineeGroupId = 0 
+        //          AND (H.ExamType = 'Mock' OR H.ExamType IS NOT NULL)
+        //        ";
+
+        //        // ✅ Same logic for data query
+        //        if (!string.IsNullOrEmpty(options.vm.UserId) && options.vm.UserId.ToLower() != "erp")
+        //        {
+        //            sqlQuery += " AND U.Name = '" + options.vm.UserId.Replace("'", "''") + "'";
+        //        }
+
+        //        data = KendoGrid<ExamVM>.GetGridDataQuestions_CMD(sqlQuery, "H.Id");
+
+        //        result.Status = "Success";
+        //        result.Message = "Exams grid data retrieved successfully.";
+        //        result.DataVM = data;
+        //        return result;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Message = ex.Message;
+        //        result.ExMessage = ex.ToString();
+        //        return result;
+        //    }
+        //}
 
 
         public async Task<ResultVM> ExamineeInsert(ExamExamineeVM examinee, SqlConnection conn, SqlTransaction transaction)
