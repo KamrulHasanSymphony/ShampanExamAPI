@@ -436,8 +436,8 @@ namespace ShampanExam.Repository.Question
                                 CAST(EQ.ExamineeId AS BIGINT) AS ExamineeId,
                                 E.Name AS ExamineeName,
                                 CASE 
-                                    WHEN ISNULL(H.IsActive,0) = 1 THEN 'Active'
-                                    ELSE 'Inactive'
+                                    WHEN ISNULL(EQ.AnswerSubmited,0) = 1 THEN 'Submited'
+                                    ELSE 'Drefted'
                                 END AS Status
                             FROM Exams H
                             INNER JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
