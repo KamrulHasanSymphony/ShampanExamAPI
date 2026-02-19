@@ -41,7 +41,7 @@ namespace ShampanTailor.Service.Question
                 }
                 if (questionHeader.QuestionType == "MultiLine" || questionHeader.QuestionType == "SingleLine")
                 {
-                    if (questionHeader.QuestionOptionDetails == null || !questionHeader.QuestionOptionDetails.Any())
+                    if (questionHeader.QuestionShortDetails == null || !questionHeader.QuestionShortDetails.Any())
                     {
                         throw new Exception("Question Short questionSetDetailList must have at least one detail!");
                     }
