@@ -28,12 +28,12 @@ namespace ShampanExam.Repository.Question
                 string query = @"
                 INSERT INTO QuestionChapters
                 (
-                    Name, NameInBangla, Remarks,
+                    Name, NameInBangla, Remarks,QuestionSubjectId,
                     IsArchive, IsActive, CreatedBy, CreatedFrom, CreatedAt
                 )
                 VALUES
                 (
-                    @Name, @NameInBangla, @Remarks,
+                    @Name, @NameInBangla, @Remarks,@QuestionSubjectId,
                     @IsArchive, @IsActive, @CreatedBy, @CreatedFrom, GETDATE()
                 );
                 SELECT SCOPE_IDENTITY();";
@@ -43,6 +43,7 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@NameInBangla", vm.NameInBangla ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@QuestionSubjectId", vm.QuestionSubjectId ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@IsArchive", vm.IsArchive);
                     cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
                     cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
@@ -82,6 +83,7 @@ namespace ShampanExam.Repository.Question
                     Name = @Name,
                     NameInBangla = @NameInBangla,
                     Remarks = @Remarks,
+                    QuestionSubjectId = @QuestionSubjectId,
                     IsActive = @IsActive,
                     LastUpdateBy = @LastUpdateBy,
                     LastUpdateFrom = @LastUpdateFrom,
@@ -94,6 +96,7 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@NameInBangla", vm.NameInBangla ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@QuestionSubjectId", vm.QuestionSubjectId ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
                     cmd.Parameters.AddWithValue("@LastUpdateBy", vm.LastUpdateBy ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@LastUpdateFrom", vm.LastUpdateFrom ?? (object)DBNull.Value);
@@ -188,6 +191,7 @@ namespace ShampanExam.Repository.Question
                     ISNULL(M.Name,'') AS Name,
                     ISNULL(M.NameInBangla,'') AS NameInBangla,
                     ISNULL(M.Remarks,'') AS Remarks,
+                    ISNULL(M.QuestionSubjectId,0) AS QuestionSubjectId,
                     ISNULL(M.IsActive,0) AS IsActive,
                     ISNULL(M.IsArchive,0) AS IsArchive,
                     ISNULL(M.CreatedBy,'') AS CreatedBy,
@@ -216,6 +220,7 @@ namespace ShampanExam.Repository.Question
                     Name = row.Field<string>("Name"),
                     NameInBangla = row.Field<string>("NameInBangla"),
                     Remarks = row.Field<string>("Remarks"),
+                    QuestionSubjectId = row.Field<int>("QuestionSubjectId"),
                     IsActive = row.Field<bool>("IsActive"),
                     IsArchive = row.Field<bool>("IsArchive"),
                     CreatedBy = row.Field<string>("CreatedBy"),
