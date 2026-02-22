@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ShampanExam.Repository.Common;
 using ShampanExam.ViewModel.CommonVMs;
 using ShampanExam.ViewModel.Exam;
@@ -163,7 +164,10 @@ namespace ShampanExam.Repository.Question
                 {
                     cmd.Parameters.AddWithValue("@AutomatedExamId", vm.Id );
                     cmd.Parameters.AddWithValue("@SubjectId", vm.SubjectId ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@NumberOfQuestion", vm.NumberOfQuestion ?? (object)DBNull.Value);
+
+                    int? numberOfQuestion = vm.NumberOfQuestion?? vm.SingleOptionNo?? vm.MultiOptionNo;
+
+                    cmd.Parameters.AddWithValue("@NumberOfQuestion", numberOfQuestion.HasValue ? (object)numberOfQuestion.Value : DBNull.Value);
                     cmd.Parameters.AddWithValue("@QuestionType", vm.QuestionType ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@QuestionMark", vm.QuestionMark);
                     vm.Id = Convert.ToInt32(cmd.ExecuteScalar());
@@ -1106,40 +1110,46 @@ LEFT JOIN GradeDetails
             return result;
         }
 
-        public async Task<ResultVM> GetUserRandomProcessedData(string[] conditionalFields,string[] conditionalValues,PeramModel vm,SqlConnection conn,SqlTransaction transaction)
+        public async Task<ResultVM> GetUserRandomProcessedData( string[] conditionalFields, string[] conditionalValues, PeramModel vm, SqlConnection conn, SqlTransaction transaction)
         {
             var result = new ResultVM { Status = "Fail", Message = "Error" };
 
             try
             {
-                int examId = 0, questionSubjectId = 0, noOfQuestion = 0;
-                string questionType = null;
+                int examId = 0, questionSubjectId = 0, singleOptionNo = 0, multiOptionNo = 0;
                 string userId = null;
 
                 if (conditionalFields != null && conditionalValues != null)
                 {
                     for (int i = 0; i < conditionalFields.Length; i++)
                     {
-                        switch (conditionalFields[i].ToLower())
+                        string field = conditionalFields[i].ToLower();
+                        string value = conditionalValues[i];
+
+                        switch (field)
                         {
                             case "examid":
-                                int.TryParse(conditionalValues[i], out examId);
+                                int.TryParse(value, out examId);
                                 break;
 
                             case "questionsubjectid":
-                                int.TryParse(conditionalValues[i], out questionSubjectId);
+                                int.TryParse(value, out questionSubjectId);
                                 break;
 
-                            case "questiontype":
-                                questionType = conditionalValues[i];
+                            case "multioptionno":
+                                multiOptionNo = 0;
+                                if (!string.IsNullOrEmpty(value))
+                                    int.TryParse(value, out multiOptionNo);
                                 break;
 
-                            case "noofquestion":
-                                int.TryParse(conditionalValues[i], out noOfQuestion);
+                            case "singleoptionno":
+                                singleOptionNo = 0;
+                                if (!string.IsNullOrEmpty(value))
+                                    int.TryParse(value, out singleOptionNo);
                                 break;
 
                             case "userid":
-                                userId = conditionalValues[i];
+                                userId = value;
                                 break;
                         }
                     }
@@ -1154,8 +1164,8 @@ LEFT JOIN GradeDetails
 
                     cmd.Parameters.AddWithValue("@ExamId", examId);
                     cmd.Parameters.AddWithValue("@QuestionSubjectId", questionSubjectId);
-                    cmd.Parameters.AddWithValue("@QuestionType", questionType);
-                    cmd.Parameters.AddWithValue("@NoOfQuestion", noOfQuestion);
+                    cmd.Parameters.AddWithValue("@MultiOptionNo", multiOptionNo);   
+                    cmd.Parameters.AddWithValue("@SingleOptionNo", singleOptionNo); 
                     cmd.Parameters.AddWithValue("@UserId", userId);
 
                     await cmd.ExecuteNonQueryAsync();
