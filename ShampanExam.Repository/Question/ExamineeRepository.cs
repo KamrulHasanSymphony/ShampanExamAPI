@@ -441,7 +441,8 @@ namespace ShampanExam.Repository.Question
                                 CASE 
                                     WHEN ISNULL(EQ.AnswerSubmited,0) = 1 THEN 'Submited'
                                     ELSE 'Drefted'
-                                END AS Status
+                                END AS Status,
+                                getdate() AS CurrentDate
                             FROM Exams H
                             INNER JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
                             LEFT JOIN Examinees E ON E.Id = EQ.ExamineeId

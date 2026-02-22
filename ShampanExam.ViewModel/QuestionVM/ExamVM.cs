@@ -10,6 +10,7 @@ namespace ShampanExam.ViewModel.QuestionVM
         public string? Name { get; set; }
         public string? Date { get; set; }
         public string? ExamDateTime { get; set; }
+        public string? CurrentDate { get; set; }
         public int? SubjectId { get; set; }
         public TimeSpan? Time { get; set; }
         public int Duration { get; set; }
