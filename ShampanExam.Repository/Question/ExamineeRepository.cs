@@ -430,15 +430,19 @@ namespace ShampanExam.Repository.Question
                                 H.Name,
                                 H.Date,
                                 H.Time,
+                                DATEADD(SECOND, DATEDIFF(SECOND, 0, H.Time), CAST(H.Date AS DATETIME)) AS ExamDateTime,
                                 H.Duration,
                                 H.TotalMark,
                                 H.Remarks,
+                                EQ.IsExamMarksSubmitted,
+	                            --EQ.MarkObtain,
                                 CAST(EQ.ExamineeId AS BIGINT) AS ExamineeId,
                                 E.Name AS ExamineeName,
                                 CASE 
                                     WHEN ISNULL(EQ.AnswerSubmited,0) = 1 THEN 'Submited'
                                     ELSE 'Drefted'
-                                END AS Status
+                                END AS Status,
+                                getdate() AS CurrentDate
                             FROM Exams H
                             INNER JOIN ExamQuestionHeaders EQ ON H.Id = EQ.ExamId
                             LEFT JOIN Examinees E ON E.Id = EQ.ExamineeId

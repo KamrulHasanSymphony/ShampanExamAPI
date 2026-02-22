@@ -12,6 +12,8 @@ namespace ShampanExam.ViewModel.QuestionVM
         public int Id { get; set; }
         public string? ExamId { get; set; }
         public int ExamineeId { get; set; }
+        public int? ExamineeGroupId { get; set; }
+        public string? GroupName { get; set; }
         public string? Name { get; set; }
         public string? MobileNo { get; set; }
         public string? CreatedBy { get; set; }

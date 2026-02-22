@@ -511,7 +511,7 @@ namespace ShampanExam.Repository.Exam
                             ELSE 0
                         END,
                     H.IsExamSubmitted = 1,   
-                    H.IsExamMarksSubmitted = 1
+                    H.IsExamMarksSubmitted = 0
 
                 FROM ExamQuestionHeaders H
                 WHERE
