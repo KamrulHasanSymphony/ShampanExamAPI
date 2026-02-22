@@ -24,6 +24,8 @@
         public string? QuestionSubjectId { get; set; }
         public string? QuestionType { get; set; }
         public string? NoOfQuestion { get; set; }
+        public string? MultiOptionNo { get; set; }
+        public string? SingleOptionNo { get; set; }
         public string? ExamineeId { get; set; }
         public string? ExamId { get; set; }
         public string? UserName { get; set; }

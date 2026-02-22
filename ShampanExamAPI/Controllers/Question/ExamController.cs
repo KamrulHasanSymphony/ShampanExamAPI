@@ -317,7 +317,8 @@ namespace ShampanExamAPI.Controllers.Question
             {
                 _examService = new ExamService();
 
-                var result = await _examService.GetUserRandomProcessedData(new[] { "ExamId", "QuestionSubjectId", "QuestionType", "NoOfQuestion", "UserId" }, new[] { vm.Id,vm.QuestionSubjectId, vm.QuestionType, vm.NoOfQuestion,vm.UserId }, null);
+                //var result = await _examService.GetUserRandomProcessedData(new[] { "ExamId", "QuestionSubjectId", "QuestionType", "NoOfQuestion", "UserId" }, new[] { vm.Id,vm.QuestionSubjectId, vm.QuestionType, vm.NoOfQuestion,vm.UserId }, null);
+                var result = await _examService.GetUserRandomProcessedData(new[] { "ExamId", "QuestionSubjectId", "MultiOptionNo", "SingleOptionNo", "UserId" }, new[] { vm.Id,vm.QuestionSubjectId, vm.MultiOptionNo, vm.SingleOptionNo, vm.UserId }, null);
 
                 if (result.Status == "Success")
                 {

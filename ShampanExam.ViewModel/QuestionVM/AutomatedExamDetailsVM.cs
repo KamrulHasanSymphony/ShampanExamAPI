@@ -19,5 +19,11 @@ namespace ShampanExam.ViewModel.QuestionVM
         public string? ExamCode { get; set; }
         public string? ExamName { get; set; }
         public string? ExamType { get; set; }
+        public string? SingleOption { get; set; }
+        public int? SingleOptionNo { get; set; }
+        public decimal? SingleQuestionMark { get; set; }
+        public string? MultiOption { get; set; }
+        public int? MultiOptionNo { get; set; }
+        public decimal? MultiQuestionMark { get; set; }
     }
 }
