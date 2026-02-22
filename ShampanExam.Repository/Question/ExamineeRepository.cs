@@ -430,9 +430,12 @@ namespace ShampanExam.Repository.Question
                                 H.Name,
                                 H.Date,
                                 H.Time,
+                                DATEADD(SECOND, DATEDIFF(SECOND, 0, H.Time), CAST(H.Date AS DATETIME)) AS ExamDateTime,
                                 H.Duration,
                                 H.TotalMark,
                                 H.Remarks,
+                                EQ.IsExamMarksSubmitted,
+	                            --EQ.MarkObtain,
                                 CAST(EQ.ExamineeId AS BIGINT) AS ExamineeId,
                                 E.Name AS ExamineeName,
                                 CASE 

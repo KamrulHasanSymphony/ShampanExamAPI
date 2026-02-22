@@ -518,10 +518,14 @@ namespace ShampanExam.Repository.Question
                     string newexamineequery = @"
                     Select
                     ISNULL(E.Id,0) Id,
+                    
+                    ISNULL(Ex.ExamineeGroupId,0) ExamineeGroupId,
                     ISNULL(E.ExamineeId,0) ExamineeId,
                     ISNULL(Ex.Name,'') Name
+                    ,ISNULL(G.Name,'') GroupName
                     from ExamExaminees E
                     LEFT OUTER JOIN Examinees Ex ON E.ExamineeId = Ex.Id
+                    LEFT OUTER JOIN ExamineeGroups G ON Ex.ExamineeGroupId = G.Id
                     WHERE 1=1 AND E.ExamId = @ExamId";
 
                     //newquery = ApplyConditions(newquery, new[] { "ExamId" }, conditionalValues, false);
@@ -535,7 +539,9 @@ namespace ShampanExam.Repository.Question
                     var listexaminee = dt3.AsEnumerable().Select(row => new ExamExamineeVM
                     {
                         Id = row.Field<int>("Id"),
+                        ExamineeGroupId = row.Field<int>("ExamineeGroupId"),
                         ExamineeId = row.Field<int>("ExamineeId"),
+                        GroupName = row.Field<string>("GroupName"),
                         Name = row.Field<string>("Name")
                     }).ToList();
 
