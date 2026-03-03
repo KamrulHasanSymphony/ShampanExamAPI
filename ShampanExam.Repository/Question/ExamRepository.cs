@@ -87,18 +87,55 @@ namespace ShampanExam.Repository.Question
                 if (conn == null) throw new Exception("Database connection failed!");
                 if (transaction == null) transaction = conn.BeginTransaction();
 
+                if (vm.automatedExamDetailList == null || !vm.automatedExamDetailList.Any())
+                {
+                    return new ResultVM
+                    {
+                        Status = "Fail",
+                        Message = "No subjects selected."
+                    };
+                }
+
+                // Check if questions exist for each subject
+                foreach (var item in vm.automatedExamDetailList)
+                {
+                    string checkQuery = @"
+        SELECT COUNT(1) 
+        FROM QuestionHeaders 
+        WHERE QuestionSubjectId = @SubjectId";
+
+                    using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn, transaction))
+                    {
+                        checkCmd.Parameters.AddWithValue("@SubjectId", item.SubjectId);
+                        int questionCount = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
+
+                        if (questionCount == 0)
+                        {
+                            result.Message = "No questions exist for selected subject. Exam not created.";
+                            result.ExMessage = "No questions exist for selected subject. Exam not created.";
+                            return result;
+                            //return new ResultVM
+                            //{
+                            //    Status = "Fail",
+                            //    Message = $"No questions exist for selected subject. Exam not created."
+                            //};
+                        }
+                    }
+                }
+
+                // 2️⃣ Insert the exam only if questions exist
                 string query = @"
-                INSERT INTO Exams
-                (
-                    Code, Name, Date, Time, Duration, TotalMark, GradeId, Remarks, IsExamByQuestionSet, 
-                    QuestionSetId, ExamineeGroupId, IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt,ExamType
-                )
-                VALUES
-                (
-                    @Code, @Name, @Date, @Time, @Duration, @TotalMark, @GradeId, @Remarks, @IsExamByQuestionSet, 
-                    @QuestionSetId, @ExamineeGroupId, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE(),@ExamType
-                );
-                SELECT SCOPE_IDENTITY();";
+        INSERT INTO Exams
+        (
+            Code, Name, Date, Time, Duration, TotalMark, GradeId, Remarks, IsExamByQuestionSet, 
+            QuestionSetId, ExamineeGroupId, IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt, ExamType
+        )
+        VALUES
+        (
+            @Code, @Name, @Date, @Time, @Duration, @TotalMark, @GradeId, @Remarks, @IsExamByQuestionSet, 
+            @QuestionSetId, @ExamineeGroupId, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE(), @ExamType
+        );
+        SELECT SCOPE_IDENTITY();";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
                 {
@@ -119,7 +156,7 @@ namespace ShampanExam.Repository.Question
                     cmd.Parameters.AddWithValue("@CreatedFrom", vm.CreatedFrom ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@ExamType", "Mock");
 
-                    vm.Id = Convert.ToInt32(cmd.ExecuteScalar());
+                    vm.Id = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 }
 
                 result.Status = "Success";
@@ -136,6 +173,64 @@ namespace ShampanExam.Repository.Question
                 return result;
             }
         }
+        //public async Task<ResultVM> SelfInsert(ExamVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
+        //{
+        //    ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
+
+        //    try
+        //    {
+        //        if (conn == null) throw new Exception("Database connection failed!");
+        //        if (transaction == null) transaction = conn.BeginTransaction();
+
+        //        string query = @"
+        //        INSERT INTO Exams
+        //        (
+        //            Code, Name, Date, Time, Duration, TotalMark, GradeId, Remarks, IsExamByQuestionSet, 
+        //            QuestionSetId, ExamineeGroupId, IsActive, IsArchive, CreatedBy, CreatedFrom, CreatedAt,ExamType
+        //        )
+        //        VALUES
+        //        (
+        //            @Code, @Name, @Date, @Time, @Duration, @TotalMark, @GradeId, @Remarks, @IsExamByQuestionSet, 
+        //            @QuestionSetId, @ExamineeGroupId, @IsActive, @IsArchive, @CreatedBy, @CreatedFrom, GETDATE(),@ExamType
+        //        );
+        //        SELECT SCOPE_IDENTITY();";
+
+        //        using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+        //        {
+        //            cmd.Parameters.AddWithValue("@Code", vm.Code ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@Name", vm.Name ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@Date", vm.Date ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@Time", vm.Time ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@Duration", vm.Duration);
+        //            cmd.Parameters.AddWithValue("@TotalMark", vm.TotalMark);
+        //            cmd.Parameters.AddWithValue("@GradeId", vm.GradeId ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@Remarks", vm.Remarks ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@IsExamByQuestionSet", vm.IsExamByQuestionSet);
+        //            cmd.Parameters.AddWithValue("@QuestionSetId", vm.QuestionSetId ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@ExamineeGroupId", vm.ExamineeGroupId ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@IsActive", vm.IsActive);
+        //            cmd.Parameters.AddWithValue("@IsArchive", vm.IsArchive);
+        //            cmd.Parameters.AddWithValue("@CreatedBy", vm.CreatedBy ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@CreatedFrom", vm.CreatedFrom ?? (object)DBNull.Value);
+        //            cmd.Parameters.AddWithValue("@ExamType", "Mock");
+
+        //            vm.Id = Convert.ToInt32(cmd.ExecuteScalar());
+        //        }
+
+        //        result.Status = "Success";
+        //        result.Message = "Exam inserted successfully.";
+        //        result.Id = vm.Id.ToString();
+        //        result.DataVM = vm;
+
+        //        return result;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Message = ex.Message;
+        //        result.ExMessage = ex.ToString();
+        //        return result;
+        //    }
+        //}
         public async Task<ResultVM> DetailsInsert(AutomatedExamDetailsVM vm, SqlConnection conn = null, SqlTransaction transaction = null)
         {
             ResultVM result = new ResultVM { Status = "Fail", Message = "Error" };
